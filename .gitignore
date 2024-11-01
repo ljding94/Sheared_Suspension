@@ -1,0 +1,10 @@
+/*
+!code
+code/*.o
+!analyze/
+analyze/__pycache__
+analyze/.DS_Store
+!plot/*.py
+!README.md
+!.gitignore
+
