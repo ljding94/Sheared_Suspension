@@ -5,35 +5,38 @@ import os
 
 
 def main():
-    folder = "../data/data_local/data_pool"
-    N = 200
-    parameters = [
-        #[N, 0.0, 0.1, 0.9, 0.1],
-        #[N, 0.0, 0.1, 0.9, 0.0],
-        [N, 0.0, 0.1, 1.0, 0.0],
-        [N, 0.0, 0.2, 1.0, 0.0],
-        [N, 0.0, 0.0, 0.9, 0.0],
-        [N, 0.0, 0.0, 0.8, 0.0],
-        #[L, N, 1.0, 0.5, 0.5, 0.0],
-        #[L, N, 0.0, 0.0, 1.0, 0.0],
-        #[L, N, 0.0, 0.5, 1.0, 0.0],
-        #[L, N, 1.0, 0.0, 1.0, 0.0],
-        #[L, N, 1.0, 0.5, 1.0, 0.0],
-        #[L, N, 0.5, 1.0, 0.0],
-        #[L, N, 0.0, 2.0, 0.0],
-        #[L, N, 0.0, 2.0, 0.5, 0.0],
+    #test_plot()
 
-        #[L, N, 0.0, 1.5, 1.0, 0.0],
-        #[L, N, 0.0, 1.0, 1.5, 0.0],
-        #[L, N, 0.0, 1.0, 1.0, 0.1],
-        #[L, N, 0.0, 1.3, 1.0, 0.0],
-    ]
-    for parameter in parameters:
-        N, sigma, theta, Sx, phi = parameter
-        finfo = f"N{N:.0f}_sigma{sigma:.1f}_theta{theta:.1f}_Sx{Sx:.1f}_phi{phi:.1f}"
-        filename = folder + f"/config_{finfo}.csv"
-        plot_gas_config(filename, finfo, show=True)
-        plot_gas_Sq_SqSq(folder, parameter, show=True)
+    if 1:
+        folder = "../data/data_local/data_pool"
+        N = 20
+        parameters = [
+            [N, 0.0, 1.00, 0.00, 0.00, 1.00],
+            [N, 0.0, 1.00, 0.10, 0.00, 1.00],
+            [N, 0.0, 1.00, 0.20, 0.00, 1.00],
+            #[N, 0.0, 1.00, 0.20, 0.00, 1.00],
+            #[N, 0.0, 1.00, 0.30, 0.00, 1.00],
+            #[N, 0.0, 1.00, 1.00, 0.00, 1.00],
+            #[N, 0.1, 1.00, 0.10, 0.00, 1.00],
+            #[N, 1.0, 1.00, 0.10, 0.00, 1.00],
+        ]
+        for parameter in parameters:
+            N, sigma, gxx, gxy, gyx, gyy = parameter
+            finfo = f"N{N:.0f}_sigma{sigma:.1f}_gxx{gxx:.2f}_gxy{gxy:.2f}_gyx{gyx:.2f}_gyy{gyy:.2f}"
+            filename = folder + f"/config_{finfo}.csv"
+            plot_gas_config(filename, finfo, show=True)
+            # plot_gas_Sq_SqSq(folder, parameter, show=True)
+            plot_gas_Iq_IqIq(folder, finfo, show=True)
+    if 0:
+        folder = "../data/data_local/data_pool"
+        N = 200
+        rand_num = 2
+        for rnum in range(rand_num):
+            finfo = f"N{N:.0f}_random_run{rnum}"
+            filename = folder + f"/config_{finfo}.csv"
+            plot_gas_config(filename, finfo, show=True)
+            # plot_gas_Sq_SqSq(folder, parameter, show=True)
+            plot_gas_Iq_IqIq(folder, finfo, show=True)
 
 
 if __name__ == "__main__":

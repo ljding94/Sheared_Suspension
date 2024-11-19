@@ -26,42 +26,55 @@ int main(int argc, char const *argv[])
         std::cout << argv[i] << " ";
     }
 
-    // precision run with specified parameters
-    if (argc == 7)
-    {
-        int n = std::atoi(argv[1]); // number density
-        double sigma = std::atof(argv[2]);
-        double theta = std::atof(argv[3]);
-        double Sx = std::atof(argv[4]);
-        double phi = std::atof(argv[5]);
-        std::string folder = std::string(argv[6]);
+    double R0 = 0.00125;
+    double sqrtD0 = 1*R0; // for simplicity: dx, dy = sqrt(2D0)*rand_norm(gen)
+    // size dependence, Einstein: D ~ 1/a, a is particle diameter
 
-        ideal_gas gas_2d(n, sigma, theta, Sx, phi);
-        // std::string finfo = "L" + std::string(argv[1]) + "_N" + std::string(argv[2]) + "_theta" + std::string(argv[3]) + "_Sx" + std::string(argv[4]) + "_Sy" + std::string(argv[5]) + "_phi" + std::string(argv[6]);
-        std::string finfo = "n" + std::string(argv[1]) + "_sigma" + std::string(argv[2]) + "_theta" + std::string(argv[3]) + "_Sx" + std::string(argv[4]) + "_phi" + std::string(argv[5]);
+    // precision run with specified parameters
+    if (argc == 8)
+    {
+        int N = std::atoi(argv[1]); // number density
+        double sigma = std::atof(argv[2]);
+        double sqrtD0 = 1*R0;
+        // double theta = std::atof(argv[3]);
+        // double Sx = std::atof(argv[4]);
+        // double phi = std::atof(argv[5]);
+
+        double gxx = std::atof(argv[3]);
+        double gxy = std::atof(argv[4]);
+        double gyx = std::atof(argv[5]);
+        double gyy = std::atof(argv[6]);
+        std::string folder = std::string(argv[7]);
+
+        ideal_gas gas_2d(N, R0, sqrtD0, sigma, gxx, gxy, gyx, gyy);
+        // ideal_gas gas_2d(N, sigma, theta, Sx, phi);
+        //  std::string finfo = "L" + std::string(argv[1]) + "_N" + std::string(argv[2]) + "_theta" + std::string(argv[3]) + "_Sx" + std::string(argv[4]) + "_Sy" + std::string(argv[5]) + "_phi" + std::string(argv[6]);
+        // std::string finfo = "N" + std::string(argv[1]) + "_sigma" + std::string(argv[2]) + "_theta" + std::string(argv[3]) + "_Sx" + std::string(argv[4]) + "_phi" + std::string(argv[5]);
+        std::string finfo = "N" + std::string(argv[1]) + "_sigma" + std::string(argv[2]) + "_gxx" + std::string(argv[3]) + "_gxy" + std::string(argv[4]) + "_gyx" + std::string(argv[5]) + "_gyy" + std::string(argv[6]);
 
         int number_of_config = 2000;
-        int bin_num = 51;
+        int bnum_r = 100;
+        int bnum_phi = 101;
 
-        gas_2d.run_simulation(number_of_config, bin_num, folder, finfo);
+        gas_2d.run_simulation(number_of_config, bnum_r, bnum_phi, folder, finfo);
     }
 
     // random run
     if (argc == 4)
     {
-        int n = std::atoi(argv[1]);
+        int N = std::atoi(argv[1]);
         int run_num = std::atoi(argv[2]);
         std::string folder = std::string(argv[3]);
 
         // number_of_config 2000, bin_num 101, n 200 takes 468s to run
 
-        int number_of_config = 2000;
-        int bin_num = 101;
+        ideal_gas gas_2d(N, R0, sqrtD0, 0, 1, 0, 0, 1, true); // random theta,Sx,Sy,phi
+        std::string finfo = "N" + std::string(argv[1]) + "_random_run" + std::to_string(run_num);
 
-        ideal_gas gas_2d(n, 0, 0, 1, 0, true); // random theta,Sx,Sy,phi
-        std::string finfo = std::string(argv[1]) + "_random_run" + std::to_string(run_num);
-
-        gas_2d.run_simulation(number_of_config, bin_num, folder, finfo);
+        int number_of_config = 20000;
+        int bnum_r = 50;
+        int bnum_phi = 51;
+        gas_2d.run_simulation(number_of_config, bnum_r, bnum_phi, folder, finfo);
     }
 
     std::clock_t c_end = std::clock();

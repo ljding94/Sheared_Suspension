@@ -7,13 +7,14 @@ import os
 def plot_gas_config(filename, finfo, show=False):
     # Load the data
     data = np.genfromtxt(filename, delimiter=",", skip_header=1)
-    f, x, y, x_af, y_af = data[:, 0], data[:, 1], data[:, 2], data[:, 3], data[:, 4]
+    R, x, y, x_af, y_af = data[:, 0], data[:, 1], data[:, 2], data[:, 3], data[:, 4]
     # Plot the data
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot([-0.5, 0.5, 0.5, -0.5, -0.5], [-0.5, -0.5, 0.5, 0.5, -0.5], color="black")  # frame
-    ax.scatter(x, y, s=f, color="gray", label="initial")
-    ax.scatter(x_af, y_af, s=f, color="tomato", label="affine-transformed")
+    ax.scatter(x, y, s=R * 3e3, color="royalblue", label="initial")
+    ax.scatter(x_af, y_af, s=R * 3e3, color="tomato", label="affine-transformed")
+    ax.legend()
     ax.set_xlabel("x")
     ax.set_ylabel("y")
 
@@ -42,7 +43,7 @@ def get_feature_Sq2D_SqSq2D_data(folder, parameters, random=False):
             print("to be developed")
         else:
             N, sigma, theta, Sx, phi = parameters[i]
-            finfo = f"N{N:.0f}_sigma{sigma:.1f}_theta{theta:.1f}_Sx{Sx:.1f}_phi{phi:.1f}"
+            finfo = f"N{N:.0f}_sigma{sigma:.1f}_theta{theta:.2f}_Sx{Sx:.2f}_phi{phi:.2f}"
             filename = f"{folder}/obs_{finfo}.csv"
 
         if not os.path.exists(filename):
@@ -56,6 +57,14 @@ def get_feature_Sq2D_SqSq2D_data(folder, parameters, random=False):
         Sq2D = data[2 : bin_num + 2, 10:]
         Sq2D_af = data[bin_num + 2 : 2 * bin_num + 2, 10:]
         SqSq2D = data[2 * bin_num + 2 : 3 * bin_num + 2, 10:]
+
+        # Apply mask to Sq2D
+        center = bin_num // 2
+        mask_range = 5
+        Sq2D[center - mask_range : center + mask_range + 1, center - mask_range : center + mask_range + 1] = np.nan
+        Sq2D_af[center - mask_range : center + mask_range + 1, center - mask_range : center + mask_range + 1] = np.nan
+        SqSq2D[center - mask_range : center + mask_range + 1, center - mask_range : center + mask_range + 1] = np.nan
+
         all_Sq2D.append(Sq2D)
         all_Sq2D_af.append(Sq2D_af)
         all_SqSq2D.append(SqSq2D)
@@ -72,6 +81,7 @@ def get_feature_Sq2D_SqSq2D_data(folder, parameters, random=False):
     all_Sq2D = np.array(all_Sq2D)
     all_Sq2D_af = np.array(all_Sq2D_af)
     all_SqSq2D = np.array(all_SqSq2D)
+
     return all_finfo, all_feature, all_feature_name, all_Sq2D, all_Sq2D_af, all_SqSq2D, qD
 
 
@@ -90,19 +100,24 @@ def plot_gas_Sq_SqSq(folder, parameter, show=False):
 
     qDx, qDy = np.meshgrid(qD, qD)
     # vmax=0, vmin=-2.5
-    ax1.pcolormesh(qDx, qDy, np.log10(Sq2D), vmax=0, vmin=-2.5, cmap="rainbow", shading="gouraud")
-    Cs = ax1.contour(qDx, qDy, np.log10(Sq2D), vmax=0, vmin=-2.5, levels=np.linspace(-2.5, 0, 6), colors="gray", linewidths=0.5, linestyle=":")
+    # ax1.pcolormesh(qDx, qDy, np.log10(Sq2D), vmax=0, vmin=-2.5, cmap="rainbow", shading="gouraud")
+    ax1.pcolormesh(qDx, qDy, np.log10(Sq2D), cmap="rainbow", shading="gouraud")
+    # Cs = ax1.contour(qDx, qDy, np.log10(Sq2D), vmax=0, vmin=-2.5, levels=np.linspace(-2.5, 0, 6), colors="gray", linewidths=0.5, linestyle=":")
+    Cs = ax1.contour(qDx, qDy, np.log10(Sq2D), colors="gray", linewidths=0.5, linestyle=":")
     # ax1.pcolormesh(qDx, qDy, Sq2D, cmap="rainbow", shading='gouraud')
     # Cs = ax1.contour(qDx, qDy, Sq2D, colors="gray", linewidths=0.5, linestyle=":")
     # Cs = ax1.contour(qDx, qDy, np.log10(Sq2D), vmax=0, vmin=-2.5, levels=np.linspace(-2.5, 0, 6), colors="gray", linewidths=0.5, linestyle=":")
     ax1.clabel(Cs, Cs.levels, inline=True, fontsize=7, fmt="%1.1f", colors="black")
+
     ax1.set_aspect("equal")
     ax1.set_xlabel(r"$q_x$")
     ax1.set_ylabel(r"$q_y$")
     ax1.set_title(r"$log_{10}(Sq2D)$")
 
-    ax2.pcolormesh(qDx, qDy, np.log10(Sq2D_af), vmax=0, vmin=-2.5, cmap="rainbow", shading="gouraud")
-    Cs = ax2.contour(qDx, qDy, np.log10(Sq2D_af), vmax=0, vmin=-2.5, levels=np.linspace(-2.5, 0, 6), colors="gray", linewidths=0.5, linestyle=":")
+    # ax2.pcolormesh(qDx, qDy, np.log10(Sq2D_af), vmax=0, vmin=-2.5, cmap="rainbow", shading="gouraud")
+    ax2.pcolormesh(qDx, qDy, np.log10(Sq2D_af), cmap="rainbow", shading="gouraud")
+    # Cs = ax2.contour(qDx, qDy, np.log10(Sq2D_af), vmax=0, vmin=-2.5, levels=np.linspace(-2.5, 0, 6), colors="gray", linewidths=0.5, linestyle=":")
+    Cs = ax2.contour(qDx, qDy, np.log10(Sq2D_af), colors="gray", linewidths=0.5, linestyle=":")
     ax2.clabel(Cs, Cs.levels, inline=True, fontsize=7, fmt="%1.1f", colors="black")
     ax2.set_aspect("equal")
     ax2.set_xlabel(r"$q_x$")
@@ -129,3 +144,170 @@ def plot_gas_Sq_SqSq(folder, parameter, show=False):
     if show:
         plt.show()
     plt.close()
+
+
+def get_feature_Iq2D_IqIq_af_data(folder, finfos):
+
+    all_N = []  # system size related
+    all_sigma = []
+    all_gxx, all_gxy, all_gyx, all_gyy = [], [], [], []  # affine transformation parameters
+    # all_theta, all_Sx, all_phi = [], [], []  # affine transformation parameters
+    all_Iq2D = []
+    all_Iq2D_af = []
+    all_IqIq_af = []
+    all_finfo = []
+    qr = []
+    qphi = []
+    for i in range(len(finfos)):
+        # N, sigma, gxx, gxy, gyx, gyy = parameters[i]
+        # finfo = f"N{N:.0f}_sigma{sigma:.1f}_gxx{gxx:.2f}_gxy{gxy:.2f}_gyx{gyx:.2f}_gyy{gyy:.2f}"
+        filename = f"{folder}/obs_{finfos[i]}.csv"
+
+        if not os.path.exists(filename):
+            print(f"File not found: {filename}")
+            continue
+        data = np.genfromtxt(filename, delimiter=",", skip_header=1)
+        bnum_phi = len(data[0]) - 11
+        print(f"bnum_phi: {bnum_phi}")
+        bnum_r = int((len(data) - 2) / 3)
+        print(f"bnum_r: {bnum_r}")
+
+        N, sigma, gxx, gxy, gyx, gyy = data[0, 1], data[0, 6], data[0, 7], data[0, 8], data[0, 9], data[0, 10]
+        qphi = data[1, 12:]
+        qr = data[2 : 2 + bnum_r, 11]
+        Iq2D = data[2 : 2 + bnum_r, 12:]
+        Iq2D_af = data[2 + bnum_r : 2 + 2 * bnum_r, 12:]
+        IqIq_af = data[2 + 2 * bnum_r : 2 + 3 * bnum_r, 12:]
+
+        all_Iq2D.append(Iq2D)
+        all_Iq2D_af.append(Iq2D_af)
+        all_IqIq_af.append(IqIq_af)
+
+        all_N.append(N)
+        all_sigma.append(sigma)
+        all_gxx.append(gxx)
+        all_gxy.append(gxy)
+        all_gyx.append(gyx)
+        all_gyy.append(gyy)
+
+    all_feature = np.array([all_N, all_sigma, all_gxx, all_gxy, all_gyx, all_gyy]).T
+    all_feature_name = ["N", "sigma", "gxx", "gxy", "gyx", "gyy"]
+    qphi = np.array(qphi)
+    qr = np.array(qr)
+    all_Iq2D = np.array(all_Iq2D)
+    all_Iq2D_af = np.array(all_Iq2D_af)
+    all_IqIq_af = np.array(all_IqIq_af)
+
+    return all_feature, all_feature_name, all_Iq2D, all_Iq2D_af, all_IqIq_af, qr, qphi
+
+
+def plot_gas_Iq_IqIq(folder, finfo, show=True):
+
+    # get single data
+    all_feature, all_feature_name, all_Iq2D, all_Iq2D_af, all_IqIq_af, qr, qphi = get_feature_Iq2D_IqIq_af_data(folder, [finfo])
+
+    plt.figure(figsize=(9, 3))
+    ax1 = plt.subplot(231, projection="polar")
+    ax2 = plt.subplot(232, projection="polar")
+    ax3 = plt.subplot(233, projection="polar")
+
+    ax4 = plt.subplot(234)
+    ax5 = plt.subplot(235)
+
+    Iq2D = all_Iq2D[0]
+    Iq2D_af = all_Iq2D_af[0]
+    IqIq_af = all_IqIq_af[0]
+
+    print(f"qr.shape: {qr.shape}")
+    print(f"qphi.shape: {qphi.shape}")
+    print("qr", qr)
+    print("qphi", qphi)
+
+    QPHI, QR = np.meshgrid(qphi, qr)
+    # QR, QPHI = np.meshgrid(qr, qphi)
+    print(f"QR.shape: {QR.shape}")
+    print(f"QPHI.shape: {QPHI.shape}")
+    print(f"Iq2D.shape: {Iq2D.shape}")
+
+    p1 = ax1.pcolormesh(QPHI, QR, np.log10(Iq2D), cmap="rainbow", shading="gouraud")
+    # Cs = ax1.contour(QPHI, QR, np.log10(Iq2D), colors="gray", linewidths=0.5, linestyle=":")
+    # ax1.clabel(Cs, Cs.levels, inline=True, fontsize=7, fmt="%1.1f", colors="black")
+    cbar1 = plt.colorbar(p1, ax=ax1, orientation="vertical", shrink=0.5)
+    cbar1.set_label(r"$log_{10}(\left<I(q)\right>)$")
+
+    ax1.set_aspect("equal")
+    ax1.set_xlabel(r"$q_\phi$")
+    ax1.set_ylabel(r"$q_r$")
+    ax1.set_title(r"$log_{10}(\left<I(q)\right>)$")
+
+    p2 = ax2.pcolormesh(QPHI, QR, np.log10(Iq2D_af), cmap="rainbow", shading="gouraud")
+    # Cs = ax2.contour(QPHI, QR, np.log10(Iq2D_af), colors="gray", linewidths=0.5, linestyle=":")
+    # ax2.clabel(Cs, Cs.levels, inline=True, fontsize=7, fmt="%1.1f", colors="black")
+    cbar2 = plt.colorbar(p2, ax=ax2, orientation="vertical", shrink=0.5)
+    cbar2.set_label(r"$log_{10}(\left<I'(q)\right>)$")
+
+    ax2.set_xlabel(r"$q_\phi$")
+    ax2.set_ylabel(r"$q_r$")
+    ax2.set_title(r"$log_{10}(\left<I'(q)\right>)$")
+
+    gq = IqIq_af/(Iq2D*Iq2D)
+    #p3 = ax3.pcolormesh(QPHI, QR, np.log10(IqIq_af), cmap="rainbow", shading="gouraud")
+    p3 = ax3.pcolormesh(QPHI, QR, gq, cmap="rainbow", shading="gouraud")
+    # Cs = ax3.contour(QPHI, QR, IqIq_af, colors="gray", linewidths=0.5, linestyle=":")
+    # ax3.clabel(Cs, Cs.levels, inline=True, fontsize=7, fmt="%1.3f", colors="black")
+    cbar3 = plt.colorbar(p3, ax=ax3, orientation="vertical", shrink=0.5)
+    cbar3.set_label(r"$g(q)$")
+
+    ax3.set_xlabel(r"$q_\phi$")
+    ax3.set_ylabel(r"$q_r$")
+    ax3.set_title(r"$g(q)=\left<I(q)I'(q)\right>/\left<I(q)\right>^2$")
+
+    IqIq_af_r = np.mean(gq, axis=1)
+    print(f"IqIq_af_r.shape: {IqIq_af_r.shape}")
+    print(f"qr.shape: {qr.shape}")
+    ax4.semilogx(qr, IqIq_af_r, color="black")
+    ax4.set_xlabel(r"$q_r$")
+    ax4.set_ylabel(r"$\sum_{\phi}g(q)$")
+
+    IqIq_af_phi = np.mean(gq, axis=0)
+    ax5.plot(qphi, IqIq_af_phi, color="black")
+    ax5.set_xlabel(r"$q_\phi$")
+    ax5.set_ylabel(r"$\sum_{r}g(q)$")
+
+
+    for ax in [ax1, ax2, ax3]:
+        ax.set_thetamin(0)
+        ax.set_thetamax(180)
+        ax.grid(False)
+        ax.set_axis_off()
+
+    plt.title(f"N={all_feature[0, 0]:.2f}, sigma={all_feature[0, 1]:.2f}, gxx={all_feature[0, 2]:.2f}, gxy={all_feature[0, 3]:.2f}, gyx={all_feature[0, 4]:.2f}, gyy={all_feature[0, 5]:.2f}")
+    plt.tight_layout()
+    plt.savefig(f"{folder}/Iq_IqIq_{finfo}.png")
+    if show:
+        plt.show()
+    plt.close()
+
+
+def calc_single_sphere_Iq(qr, R):
+    return 3.0 / (qr * R)**3 * (np.sin(qr * R) - qr * R * np.cos(qr * R))
+
+def test_plot():
+    r = np.linspace(400, 4000, 40)
+    phi = np.linspace(0, 2 * np.pi / 20 * 19, 20)
+    print(phi)
+
+    R, PHI = np.meshgrid(r, phi)
+
+    Z = np.sin(PHI) * np.exp(-R / 1000)
+    print("R.shape", R.shape)
+    print("Z.shape", Z.shape)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="polar")
+    ax.pcolormesh(PHI, R, Z, shading="gouraud")
+    ax.set_aspect("equal")
+    ax.set_xlabel(r"$r$")
+    ax.set_ylabel(r"$\phi$")
+    ax.set_title(r"Polar Coordinate Plot")
+    plt.show()
