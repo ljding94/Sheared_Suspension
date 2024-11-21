@@ -7,20 +7,22 @@ from scipy.optimize import curve_fit
 import pickle
 
 
-def get_feature_SqSq2D_data(folder, parameters, random=False):
+def get_feature_Iq2D_IqIq_af_data(folder, parameters, random=False):
 
     all_N = []  # system size related
-    all_theta, all_Sx, all_phi = [], [], []  # affine transformation parameters
-    all_gamma_xx, all_gamma_xy, all_gamma_yx, all_gamma_yy = [], [], [], []  # affine transformation parameters
-    #all_Sq2D = []
-    #all_Sq2D_af = []
-    all_SqSq2D_flatten = []
+    all_sigma = []
+    all_gxx, all_gxy, all_gyx, all_gyy = [], [], [], []  # affine transformation parameters
+    # all_theta, all_Sx, all_phi = [], [], []  # affine transformation parameters
+    all_Iq2D = []
+    all_Iq2D_af = []
+    all_IqIq_af_flatten = []
     all_finfo = []
-    qD = []
+    qr = []
+    qphi = []
     for i in range(len(parameters)):
         if random:
-            n, run_num = parameters[i]
-            finfo = f"{n:.0f}_random_run{run_num:.0f}"
+            N, run_num = parameters[i]
+            finfo = f"N{N:.0f}_random_run{run_num:.0f}"
         else:
             N, sigma, theta, Sx, phi = parameters[i]
             finfo = f"{N:.0f}_sigma{sigma:.1f}_theta{theta:.1f}_Sx{Sx:.1f}_phi{phi:.1f}"
@@ -31,56 +33,46 @@ def get_feature_SqSq2D_data(folder, parameters, random=False):
             print(f"File not found: {filename}")
             continue
         data = np.genfromtxt(filename, delimiter=",", skip_header=1)
-        bin_num = len(data[0]) - 10
-        print(f"bin_num: {bin_num}")
+        bnum_phi = len(data[0]) - 11
+        bnum_r = int((len(data) - 2) / 3)
 
-        qD = data[1, 10:]
-        Sq2D = data[2 : bin_num + 2, 10:]
-        Sq2D_af = data[bin_num + 2 : 2 * bin_num + 2, 10:]
-        SqSq2D = data[2 * bin_num + 2 : 3 * bin_num + 2, 10:]
+        N, sigma, gxx, gxy, gyx, gyy = data[0, 1], data[0, 6], data[0, 7], data[0, 8], data[0, 9], data[0, 10]
+        qphi = data[1, 12:]
+        qr = data[2 : 2 + bnum_r, 11]
+        Iq2D = data[2 : 2 + bnum_r, 12:]
+        Iq2D_af = data[2 + bnum_r : 2 + 2 * bnum_r, 12:]
+        IqIq_af = data[2 + 2 * bnum_r : 2 + 3 * bnum_r, 12:]
 
-        center = bin_num // 2
-        mask_range = 5
-        Sq2D[center - mask_range : center + mask_range + 1, center - mask_range : center + mask_range + 1] = 0
-        Sq2D_af[center - mask_range : center + mask_range + 1, center - mask_range : center + mask_range + 1] = 0
-        SqSq2D[center - mask_range : center + mask_range + 1, center - mask_range : center + mask_range +1] = 0
+        all_Iq2D.append(Iq2D)
+        all_Iq2D_af.append(Iq2D_af)
+        all_IqIq_af_flatten.append(IqIq_af.flatten())
 
-        all_SqSq2D_flatten.append(SqSq2D.flatten())
-
-        n = data[0, 1]
-        theta = data[0, 2]
-        Sx = data[0, 3]
-        phi = data[0, 5]
-        gamma_xx = data[0, 6]
-        gamma_xy = data[0, 7]
-        gamma_yx = data[0, 8]
-        gamma_yy = data[0, 9]
-
-        all_N.append(n)
-        all_theta.append(theta)
-        all_Sx.append(Sx)
-        all_phi.append(phi)
-
-        all_gamma_xx.append(gamma_xx)
-        all_gamma_xy.append(gamma_xy)
-        all_gamma_yx.append(gamma_yx)
-        all_gamma_yy.append(gamma_yy)
+        all_N.append(N)
+        all_sigma.append(sigma)
+        all_gxx.append(gxx)
+        all_gxy.append(gxy)
+        all_gyx.append(gyx)
+        all_gyy.append(gyy)
 
         all_finfo.append(finfo)
 
-    all_feature = np.array([all_theta, all_Sx, all_phi, all_gamma_xx, all_gamma_xy, all_gamma_yx, all_gamma_yy]).T
-    all_feature_name = ["theta", "Sx", "phi", "gamma_xx", "gamma_xy", "gamma_yx", "gamma_yy"]
-    all_feature_tex = [r"$\theta$", r"$S_x$", r"$\phi$", r"$\gamma_{xx}$", r"$\gamma_{xy}$", r"$\gamma_{yx}$", r"$\gamma_{yy}$"]
-    qD = np.array(qD)
-    all_SqSq2D_flatten = np.array(all_SqSq2D_flatten)
-    return all_feature, all_feature_name, all_feature_tex, all_SqSq2D_flatten, qD
+    all_feature = np.array([all_N, all_sigma, all_gxx, all_gxy, all_gyx, all_gyy]).T
+    all_feature_name = ["N", "sigma", "gxx", "gxy", "gyx", "gyy"]
+    all_feature_tex = [r"$N$", r"$\sigma$", r"$\gamma_{xx}$", r"$\gamma_{xy}$", r"$\gamma_{yx}$", r"$\gamma_{yy}$"]
+    qphi = np.array(qphi)
+    qr = np.array(qr)
+    all_Iq2D = np.array(all_Iq2D)
+    all_Iq2D_af = np.array(all_Iq2D_af/(Iq2D*Iq2D))
+    all_IqIq_af_flatten = np.array(all_IqIq_af_flatten)
+
+    return all_feature, all_feature_name, all_feature_tex, all_Iq2D, all_Iq2D_af, all_IqIq_af_flatten, qr, qphi
 
 
 def calc_svd(folder, parameters):
-    all_feature, all_feature_name, all_feature_tex, all_SqSq2D_flatten, qD = get_feature_SqSq2D_data(folder, parameters, random=True)
+    all_feature, all_feature_name, all_feature_tex, all_Iq2D, all_Iq2D_af, all_IqIq_af_flatten, qr, qphi = get_feature_Iq2D_IqIq_af_data(folder, parameters, random=True)
 
     print("all_feature shape:", np.array(all_feature).shape)
-    svd = np.linalg.svd(all_SqSq2D_flatten)
+    svd = np.linalg.svd(all_IqIq_af_flatten)
     print(svd.S)
     print("np.array(svd.U).shape", np.array(svd.U).shape)
     print("np.array(svd.S).shape", np.array(svd.S).shape)
@@ -94,20 +86,20 @@ def calc_svd(folder, parameters):
     ax00.set_title("Singular Values (svd.S)")
 
     # Subplot for svd.U
-    qDx, qDy = np.meshgrid(qD, qD)
-    ax01 = plt.subplot(2, 2, 2)
+    QPHI, QR = np.meshgrid(qphi, qr)
+    ax01 = plt.subplot(2, 2, 2, projection="polar")
     print("np.minimum(svd.Vh[0]), np.maximum(svd.Vh[0])", svd.Vh[0].min(), svd.Vh[0].max())
-    ax01.contourf(qDx, qDy, svd.Vh[0].reshape(np.shape(qDx)), levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
+    ax01.contourf(QPHI, QR, svd.Vh[0].reshape(np.shape(QPHI)), levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
     ax01.set_title("Left Singular Vectors (svd.Vh[0])")
 
-    ax11 = plt.subplot(2, 2, 3)
+    ax11 = plt.subplot(2, 2, 3, projection="polar")
     print("np.minimum(svd.Vh[1]), np.maximum(svd.Vh[1])", svd.Vh[1].min(), svd.Vh[1].max())
-    ax11.contourf(qDx, qDy, svd.Vh[1].reshape(np.shape(qDx)), levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
+    ax11.contourf(QPHI, QR, svd.Vh[1].reshape(np.shape(QPHI)), levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
     ax11.set_title("Left Singular Vectors (svd.Vh[1])")
 
-    ax12 = plt.subplot(2, 2, 4)
+    ax12 = plt.subplot(2, 2, 4, projection="polar")
     print("np.minimum(svd.Vh[2]), np.maximum(svd.Vh[2])", svd.Vh[2].min(), svd.Vh[2].max())
-    ax12.contourf(qDx, qDy, svd.Vh[2].reshape(np.shape(qDx)), levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
+    ax12.contourf(QPHI, QR, svd.Vh[2].reshape(np.shape(QPHI)), levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
     ax12.set_title("Left Singular Vectors (svd.Vh[2])")
 
     plt.tight_layout()
@@ -115,7 +107,7 @@ def calc_svd(folder, parameters):
     plt.show()
     plt.close()
 
-    SqV = np.inner(all_SqSq2D_flatten, np.transpose(svd.Vh))
+    SqV = np.inner(all_IqIq_af_flatten, np.transpose(svd.Vh))
     plt.figure()
     fig = plt.figure(figsize=(2 * len(all_feature_name), 8))
     axs = [fig.add_subplot(2, len(all_feature_name) // 2 + 1, i + 1, projection="3d") for i in range(len(all_feature_name))]
@@ -124,7 +116,7 @@ def calc_svd(folder, parameters):
         axs[i].set_xlabel("V[0]")
         axs[i].set_ylabel("V[1]")
         axs[i].set_zlabel("V[2]")
-        axs[i].set_title(all_feature_name[i])
+        axs[i].set_title(all_feature_tex[i])
         axs[i].set_box_aspect([1, 1, 1])  # Set the aspect ratio of the plot
         # Set the same range for each axis
         max_range = np.array([SqV[:, 0].max() - SqV[:, 0].min(), SqV[:, 1].max() - SqV[:, 1].min(), SqV[:, 2].max() - SqV[:, 2].min()]).max() / 2.0

@@ -33,16 +33,11 @@ struct bead
 class ideal_gas
 {
 public:
-    int n; // number of beads or number density, since use box size L=1
     double R0;    // average radius of the bead
-    double sqrtD0;    // average diffusion coefficient
-
+    int n; // number of beads or number density, since use box size L=1
     double sigma;  // std of log-normal distribution of scattering weight
-    double theta;  // first rotation angle
-    double Sx, Sy; // streching factor
-    double phi;    // second rotation angle
-
-    double gxx, gxy, gyx, gyy; // affine matrix
+    double sqrtD;    // average diffusion coefficient
+    double gxy; // shear
 
     std::vector<bead> all_beads; // the gas sysem
 
@@ -53,7 +48,7 @@ public:
 
     // initialization
     //ideal_gas(int n_, double sigma_, double theta_, double Sx_, double phi_, bool random_param = false);
-    ideal_gas(int n_, double R0_, double D0_, double sigma_, double gxx_, double gxy_, double gyx_, double gyy_, bool random_param = false);
+    ideal_gas(double R0_, int n_, double sigma_, double sqrtD_, double gxy_, bool random_param = false);
 
     int generate_gas();
 

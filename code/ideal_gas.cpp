@@ -6,7 +6,7 @@
 #include <fstream>
 
 // initialization
-ideal_gas::ideal_gas(int n_, double R0_, double sqrtD0_, double sigma_, double gxx_, double gxy_, double gyx_, double gyy_, bool random_param)
+ideal_gas::ideal_gas(double R0_, int n_, double sigma_, double sqrtD_, double gxy_, bool random_param)
 {
 
     // set random number generators
@@ -19,52 +19,31 @@ ideal_gas::ideal_gas(int n_, double R0_, double sqrtD0_, double sigma_, double g
     rand_uni = rand_uni_set;
     rand_norm = rand_norm_set;
 
-    n = n_;
     R0 = R0_;
-    sqrtD0 = sqrtD0_;
+
+    n = n_;
+    sigma = sigma_;
+    sqrtD = sqrtD_;
+    gxy = gxy_;
 
     // generate the gas system
     if (random_param)
     {
         std::cout << "\nrandom_param" << std::endl;
-        // sigma = 1.0 * rand_uni(gen);
-        // theta = 0.1 * M_PI * rand_uni(gen);
-        // Sx = 0.9 + 0.2 * rand_uni(gen);
-        // phi = 0.1 * M_PI * rand_uni(gen);
-        //  to make area invariant
         // gxx*gyy-gxy*gyx=1
-        sigma = 0.0 * rand_uni(gen);
-        gxx = 0.9 + 0.2 * rand_uni(gen);
-        gxy = -0.1 + 0.2 * rand_uni(gen);
-        gyx = -0.1 + 0.2 * rand_uni(gen);
-        gyy = (1 + gxy * gyx) / gxx;
+        n = 100 + 100 * rand_uni(gen);
+        sigma = 0.0 + 0.5 * rand_uni(gen);
+        sqrtD = (0.0 + 2 * rand_uni(gen)) * R0;
+        gxy = (-10 + 20 * rand_uni(gen)) * R0;
     }
     else
     {
-        gxx = gxx_;
-        gxy = gxy_;
-        gyx = gyx_;
-        gyy = gyy_;
+        n = n_;
         sigma = sigma_;
-        // theta = theta_;
-        // Sx = Sx_;
-        // phi = phi_;
+        sqrtD = sqrtD_;
+        gxy = gxy_;
     }
-    // Sy = 1.0 / Sx;
-    // std::cout << "theta: " << theta << ", Sx: " << Sx << ", Sy: " << Sy << ", phi: " << phi << std::endl;
-    std::cout << "\ngxx: " << gxx << ", gxy: " << gxy << ", gyx: " << gyx << ", gyy: " << gyy << std::endl;
-
-    // calc the affine matrix
-    /*
-    double cos_theta = std::cos(theta);
-    double sin_theta = std::sin(theta);
-    double cos_phi = std::cos(phi);
-    double sin_phi = std::sin(phi);
-    */
-    // gxx = Sx * cos_theta * cos_phi + Sy * sin_theta * sin_phi;
-    // gxy = Sx * sin_theta * cos_phi - Sy * cos_theta * sin_phi;
-    // gyx = Sx * cos_theta * sin_phi - Sy * sin_theta * cos_phi;
-    // gyy = Sx * sin_theta * sin_phi + Sy * cos_theta * cos_phi;
+    std::cout << "n=" << n << ", sigma=" << sigma << ", sqrtD/R0=" << sqrtD / R0 << ", gxy/R0=" << gxy / R0 << std::endl;
 }
 
 int ideal_gas::generate_gas()
@@ -221,8 +200,8 @@ void ideal_gas::affine_transform()
     {
         x = all_beads[i].r[0];
         y = all_beads[i].r[1];
-        all_beads[i].r[0] = gxx * x + gxy * y;
-        all_beads[i].r[1] = gyx * x + gyy * y;
+        all_beads[i].r[0] = x + gxy * y;
+        all_beads[i].r[1] = y;
     }
 }
 
@@ -232,8 +211,8 @@ void ideal_gas::Brownian_transform()
     double dx, dy;
     for (int i = 0; i < all_beads.size(); i++)
     {
-        dx = sqrtD0 * std::sqrt(R0 / all_beads[i].R) * rand_norm(gen);
-        dy = sqrtD0 * std::sqrt(R0 / all_beads[i].R) * rand_norm(gen);
+        dx = sqrtD * std::sqrt(R0 / all_beads[i].R) * rand_norm(gen);
+        dy = sqrtD * std::sqrt(R0 / all_beads[i].R) * rand_norm(gen);
         all_beads[i].r[0] += dx;
         all_beads[i].r[1] += dy;
     }
@@ -327,10 +306,10 @@ void ideal_gas::save_gas_config_to_file(std::string filename)
         std::vector<bead> all_beads_pre_af = all_beads;
         affine_transform();
         Brownian_transform();
-        f << "R,x,y,x_af,y_af\n";
+        f << "R0,R,x,y,x_af,y_af\n";
         for (int i = 0; i < all_beads.size(); i++)
         {
-            f << all_beads_pre_af[i].R << "," << all_beads_pre_af[i].r[0] << "," << all_beads_pre_af[i].r[1] << "," << all_beads[i].r[0] << "," << all_beads[i].r[1] << "\n";
+            f << R0 << "," << all_beads_pre_af[i].R << "," << all_beads_pre_af[i].r[0] << "," << all_beads_pre_af[i].r[1] << "," << all_beads[i].r[0] << "," << all_beads[i].r[1] << "\n";
         }
         f.close();
     }
@@ -380,17 +359,16 @@ void ideal_gas::save_observable_to_file(std::string filename, std::vector<observ
             }
         }
 
-        f << "label,n,sigma,theta,Sx,Sy,phi,gxx,gxy,gyz,gyy,qr,Iq2D/Iq2D_af/IqIq_af\n";
+        f << "label,R0,n,sigma,sqrtD/R0,gxy/R0,qr,Iq2D/Iq2D_af/IqIq_af\n";
         // write parameters and stats to the file
-        f << "mean," << n << "," << sigma << "," << theta << "," << Sx << "," << Sy << "," << phi
-          << "," << gxx << "," << gxy << "," << gyx << "," << gyy;
+        f << "mean," << R0 << "," << n << "," << sigma << "," << sqrtD / R0 << "," << gxy / R0;
         f << ",Na";
         for (int j = 0; j < obs_ensemble[0].qphi.size(); j++)
         {
             f << ",NA";
         }
-        f << "\n qphi,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA";
-        f << ",Na";
+        f << "\n qphi,NA,NA,NA,NA,NA";
+        f << ",NA";
         for (int j = 0; j < obs_ensemble[0].qphi.size(); j++)
         {
             f << "," << obs_ensemble[0].qphi[j];
@@ -398,7 +376,7 @@ void ideal_gas::save_observable_to_file(std::string filename, std::vector<observ
 
         for (int kr = 0; kr < obs_ensemble[0].Iq2D.size(); kr++)
         {
-            f << "\nIq2D,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA";
+            f << "\nIq2D,NA,NA,NA,NA,NA";
             f << "," << obs_ensemble[0].qr[kr];
             for (int kphi = 0; kphi < obs_ensemble[0].Iq2D[kr].size(); kphi++)
             {
@@ -408,7 +386,7 @@ void ideal_gas::save_observable_to_file(std::string filename, std::vector<observ
 
         for (int kr = 0; kr < obs_ensemble[0].Iq2D_af.size(); kr++)
         {
-            f << "\nIq2D_af,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA";
+            f << "\nIq2D_af,NA,NA,NA,NA,NA";
             f << "," << obs_ensemble[0].qr[kr];
             for (int kphi = 0; kphi < obs_ensemble[0].Iq2D[kr].size(); kphi++)
             {
@@ -418,7 +396,7 @@ void ideal_gas::save_observable_to_file(std::string filename, std::vector<observ
 
         for (int kr = 0; kr < obs_ensemble[0].IqIq_af.size(); kr++)
         {
-            f << "\nIqIq_af,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA";
+            f << "\nIqIq_af,NA,NA,NA,NA,NA";
             f << "," << obs_ensemble[0].qr[kr];
             for (int kphi = 0; kphi < obs_ensemble[0].Iq2D[kr].size(); kphi++)
             {
