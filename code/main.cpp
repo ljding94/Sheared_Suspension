@@ -5,7 +5,7 @@
 #include <string>
 #include <chrono>
 #include <filesystem>
-#include "ideal_gas.h"
+#include "suspension.h"
 
 int main(int argc, char const *argv[])
 {
@@ -27,24 +27,26 @@ int main(int argc, char const *argv[])
     }
 
     double R0 = 0.00125;
+    double Rmu = 1*R0;
     double sqrtD0 = 1*R0; // for simplicity: dx, dy = sqrt(2D0)*rand_norm(gen)
     // size dependence, Einstein: D ~ 1/a, a is particle diameter
 
     // precision run with specified parameters
-    if (argc == 6)
+    if (argc == 7)
     {
         int n = std::atoi(argv[1]); // number density
-        double sigma = std::atof(argv[2]);
-        double sqrtD = std::atof(argv[3])*R0;
+        double Rmu = std::atof(argv[2])*R0;
+        double sigma = std::atof(argv[3]);
+        double sqrtD = std::atof(argv[4])*R0;
         // double theta = std::atof(argv[3]);
         // double Sx = std::atof(argv[4]);
         // double phi = std::atof(argv[5]);
-        double gxy = std::atof(argv[4])*R0;
-        std::string folder = std::string(argv[5]);
+        double gxy = std::atof(argv[5])*R0;
+        std::string folder = std::string(argv[6]);
 
-        ideal_gas gas_2d(R0, n, sigma, sqrtD, gxy, false);
+        suspension gas_2d(R0, Rmu, n, sigma, sqrtD, gxy, false);
 
-        std::string finfo = "n" + std::string(argv[1]) + "_sigma" + std::string(argv[2]) + "_sqrtD" + std::string(argv[3]) + "_gxy" + std::string(argv[4]);
+        std::string finfo = "n" + std::string(argv[1]) + "_Rmu" + std::string(argv[2]) + "_sigma" + std::string(argv[3]) + "_sqrtD" + std::string(argv[4]) + "_gxy" + std::string(argv[5]);
 
         int number_of_config = 2000;
         int bnum_r = 100;
@@ -61,7 +63,7 @@ int main(int argc, char const *argv[])
 
         // number_of_config 2000, bin_num 101, n 200 takes 468s to run
 
-        ideal_gas gas_2d(R0, 100, 0.0, 1.0, 0.0, true);
+        suspension gas_2d(R0, 1.0*R0, 100, 0.0, 1.0, 0.0, true);
         std::string finfo = "random_run" + std::to_string(run_num);
 
         int number_of_config = 4000;

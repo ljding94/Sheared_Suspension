@@ -10,15 +10,14 @@ import time
 def main():
 
     print("analyzing data using ML model")
-    folder = "../data/20241119_rand"
-    rand_num = 1000
-    rand_max = 1000
+    folder = "../data/20241120_rand"
+    rand_num = 4000
+    rand_max = 4000
     parameters = []
-    n = 100
     for i in range(rand_num):
-        filename = f"{folder}/obs_N{n}_random_run{i}.csv"
+        filename = f"{folder}/obs_random_run{i}.csv"
         if os.path.exists(filename):
-            parameters.append([n, i])
+            parameters.append([i])
         if len(parameters) >= rand_max:
             break
     print("parameters", parameters)

@@ -1,9 +1,9 @@
 Compile=g++ -g -std=c++20 -O3 # improve run time e.g. 10s to 4s
-ideal_gas: main.o ideal_gas.o
-	$(Compile) -o ideal_gas main.o ideal_gas.o
-main.o: main.cpp ideal_gas.h
+suspension: main.o suspension.o
+	$(Compile) -o suspension main.o suspension.o
+main.o: main.cpp suspension.h
 	$(Compile) -o main.o -c main.cpp
-ideal_gas.o: ideal_gas.cpp ideal_gas.h
-	$(Compile) -o ideal_gas.o -c ideal_gas.cpp
+suspension.o: suspension.cpp suspension.h
+	$(Compile) -o suspension.o -c suspension.cpp
 clean:
-	rm -f main.o ideal_gas.o
+	rm -f main.o suspension.o

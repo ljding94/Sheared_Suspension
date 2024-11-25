@@ -1,5 +1,5 @@
-#ifndef _IDEAL_GAS_H
-#define _IDEAL_GAS_H
+#ifndef _SUSPENSION_H
+#define _SUSPENSION_H
 #include <iostream>
 #include <random>
 #include <string>
@@ -30,10 +30,11 @@ struct bead
     // note: Fq = |fq|^2
 };
 
-class ideal_gas
+class suspension
 {
 public:
-    double R0;    // average radius of the bead
+    double R0;    // useful length scale
+    double Rmu;    // average radius of the bead
     int n; // number of beads or number density, since use box size L=1
     double sigma;  // std of log-normal distribution of scattering weight
     double sqrtD;    // average diffusion coefficient
@@ -47,8 +48,8 @@ public:
     std::normal_distribution<> rand_norm;      // normal distribution
 
     // initialization
-    //ideal_gas(int n_, double sigma_, double theta_, double Sx_, double phi_, bool random_param = false);
-    ideal_gas(double R0_, int n_, double sigma_, double sqrtD_, double gxy_, bool random_param = false);
+    //suspension(int n_, double sigma_, double theta_, double Sx_, double phi_, bool random_param = false);
+    suspension(double R0_, double Rmu_, int n_, double sigma_, double sqrtD_, double gxy_, bool random_param = false);
 
     int generate_gas();
 

@@ -7,22 +7,26 @@ from scipy.optimize import curve_fit
 import pickle
 
 
-def get_feature_Iq2D_IqIq_af_data(folder, parameters, random=False):
+def get_feature_Iq_gq_data(folder, parameters, random=False):
 
-    all_N = []  # system size related
+    all_R0 = []  # suspension size related
+    all_n = []  # system size related
     all_sigma = []
-    all_gxx, all_gxy, all_gyx, all_gyy = [], [], [], []  # affine transformation parameters
+    all_sqrtD = []
+    all_gxy = []
     # all_theta, all_Sx, all_phi = [], [], []  # affine transformation parameters
     all_Iq2D = []
+    all_Iq_flatten = []
     all_Iq2D_af = []
-    all_IqIq_af_flatten = []
+    all_gq = []
+    all_gq_flatten = []
     all_finfo = []
     qr = []
     qphi = []
     for i in range(len(parameters)):
         if random:
-            N, run_num = parameters[i]
-            finfo = f"N{N:.0f}_random_run{run_num:.0f}"
+            run_num = parameters[i][0]
+            finfo = f"random_run{run_num:.0f}"
         else:
             N, sigma, theta, Sx, phi = parameters[i]
             finfo = f"{N:.0f}_sigma{sigma:.1f}_theta{theta:.1f}_Sx{Sx:.1f}_phi{phi:.1f}"
@@ -33,119 +37,126 @@ def get_feature_Iq2D_IqIq_af_data(folder, parameters, random=False):
             print(f"File not found: {filename}")
             continue
         data = np.genfromtxt(filename, delimiter=",", skip_header=1)
-        bnum_phi = len(data[0]) - 11
+        bnum_phi = len(data[0]) - 7
         bnum_r = int((len(data) - 2) / 3)
 
-        N, sigma, gxx, gxy, gyx, gyy = data[0, 1], data[0, 6], data[0, 7], data[0, 8], data[0, 9], data[0, 10]
-        qphi = data[1, 12:]
-        qr = data[2 : 2 + bnum_r, 11]
-        Iq2D = data[2 : 2 + bnum_r, 12:]
-        Iq2D_af = data[2 + bnum_r : 2 + 2 * bnum_r, 12:]
-        IqIq_af = data[2 + 2 * bnum_r : 2 + 3 * bnum_r, 12:]
+        R0, n, sigma, sqrtD, gxy = data[0, 1], data[0, 2], data[0, 3], data[0, 4], data[0, 5]
+
+        qphi = data[1, 7:]
+        qr = data[2 : 2 + bnum_r, 6]
+        Iq2D = data[2 : 2 + bnum_r, 7:]
+        Iq2D_af = data[2 + bnum_r : 2 + 2 * bnum_r, 7:]
+        IqIq_af = data[2 + 2 * bnum_r : 2 + 3 * bnum_r, 7:]
 
         all_Iq2D.append(Iq2D)
+        all_Iq_flatten.append(Iq2D.flatten())
         all_Iq2D_af.append(Iq2D_af)
-        all_IqIq_af_flatten.append(IqIq_af.flatten())
+        gq = IqIq_af / (Iq2D * Iq2D)
+        all_gq.append(gq)
+        all_gq_flatten.append(gq.flatten())
 
-        all_N.append(N)
+        all_R0.append(R0)
+        all_n.append(n)
         all_sigma.append(sigma)
-        all_gxx.append(gxx)
-        all_gxy.append(gxy)
-        all_gyx.append(gyx)
-        all_gyy.append(gyy)
+        all_sqrtD.append(sqrtD)
+        all_gxy.append(np.abs(gxy))
 
         all_finfo.append(finfo)
 
-    all_feature = np.array([all_N, all_sigma, all_gxx, all_gxy, all_gyx, all_gyy]).T
-    all_feature_name = ["N", "sigma", "gxx", "gxy", "gyx", "gyy"]
-    all_feature_tex = [r"$N$", r"$\sigma$", r"$\gamma_{xx}$", r"$\gamma_{xy}$", r"$\gamma_{yx}$", r"$\gamma_{yy}$"]
+    all_feature = np.array([all_R0, all_n, all_sigma, all_sqrtD, all_gxy]).T
+    all_feature_name = ["R0", "n", "sigma", "sqrtD", "gxy"]
+    all_feature_tex = [r"$R_0$", r"$n$", r"$\sigma$", r"$\sqrt{D}$", r"$\gamma_{xy}$"]
+
     qphi = np.array(qphi)
     qr = np.array(qr)
-    all_Iq2D = np.array(all_Iq2D)
-    all_Iq2D_af = np.array(all_Iq2D_af/(Iq2D*Iq2D))
-    all_IqIq_af_flatten = np.array(all_IqIq_af_flatten)
+    all_Iq_flatten = np.array(all_Iq_flatten)
+    all_gq_flatten = np.array(all_gq_flatten)
 
-    return all_feature, all_feature_name, all_feature_tex, all_Iq2D, all_Iq2D_af, all_IqIq_af_flatten, qr, qphi
+    return all_feature, all_feature_name, all_feature_tex, all_Iq_flatten, all_gq_flatten, qr, qphi
 
 
 def calc_svd(folder, parameters):
-    all_feature, all_feature_name, all_feature_tex, all_Iq2D, all_Iq2D_af, all_IqIq_af_flatten, qr, qphi = get_feature_Iq2D_IqIq_af_data(folder, parameters, random=True)
+    all_feature, all_feature_name, all_feature_tex, all_Iq_flatten, all_gq_flatten, qr, qphi = get_feature_Iq_gq_data(folder, parameters, random=True)
 
-    print("all_feature shape:", np.array(all_feature).shape)
-    svd = np.linalg.svd(all_IqIq_af_flatten)
-    print(svd.S)
-    print("np.array(svd.U).shape", np.array(svd.U).shape)
-    print("np.array(svd.S).shape", np.array(svd.S).shape)
-    print("np.array(svd.Vh).shape", np.array(svd.Vh).shape)
-    # print(np.linalg.svd(all_Delta_Sq))
+    F = [np.log(all_Iq_flatten), all_gq_flatten]
+    Fname = ["logIq", "gq"]
+    # for k in range(len(F)):
+    for k in [1]:
+        print("all_feature shape:", np.array(all_feature).shape)
+        svd = np.linalg.svd(F[k])
+        print(svd.S)
+        print("np.array(svd.U).shape", np.array(svd.U).shape)
+        print("np.array(svd.S).shape", np.array(svd.S).shape)
+        print("np.array(svd.Vh).shape", np.array(svd.Vh).shape)
+        # print(np.linalg.svd(all_Delta_Sq))
 
-    plt.figure(figsize=(6, 6))
-    # Subplot for svd.S
-    ax00 = plt.subplot(2, 2, 1)
-    ax00.plot(range(len(svd.S)), svd.S, "o--", markerfacecolor="none", label="svd.S")
-    ax00.set_title("Singular Values (svd.S)")
+        plt.figure(figsize=(6, 6))
+        # Subplot for svd.S
+        ax00 = plt.subplot(2, 2, 1)
+        ax00.plot(range(len(svd.S)), svd.S, "o--", markerfacecolor="none", label="svd.S")
+        ax00.set_title("Singular Values (svd.S)")
 
-    # Subplot for svd.U
-    QPHI, QR = np.meshgrid(qphi, qr)
-    ax01 = plt.subplot(2, 2, 2, projection="polar")
-    print("np.minimum(svd.Vh[0]), np.maximum(svd.Vh[0])", svd.Vh[0].min(), svd.Vh[0].max())
-    ax01.contourf(QPHI, QR, svd.Vh[0].reshape(np.shape(QPHI)), levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
-    ax01.set_title("Left Singular Vectors (svd.Vh[0])")
+        # Subplot for svd.U
+        QPHI, QR = np.meshgrid(qphi, qr)
+        ax01 = plt.subplot(2, 2, 2, projection="polar")
+        print("np.minimum(svd.Vh[0]), np.maximum(svd.Vh[0])", svd.Vh[0].min(), svd.Vh[0].max())
+        ax01.contourf(QPHI, QR, svd.Vh[0].reshape(np.shape(QPHI)), cmap="rainbow")  # , levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
+        ax01.set_title("Left Singular Vectors (svd.Vh[0])")
 
-    ax11 = plt.subplot(2, 2, 3, projection="polar")
-    print("np.minimum(svd.Vh[1]), np.maximum(svd.Vh[1])", svd.Vh[1].min(), svd.Vh[1].max())
-    ax11.contourf(QPHI, QR, svd.Vh[1].reshape(np.shape(QPHI)), levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
-    ax11.set_title("Left Singular Vectors (svd.Vh[1])")
+        ax11 = plt.subplot(2, 2, 3, projection="polar")
+        print("np.minimum(svd.Vh[1]), np.maximum(svd.Vh[1])", svd.Vh[1].min(), svd.Vh[1].max())
+        ax11.contourf(QPHI, QR, svd.Vh[1].reshape(np.shape(QPHI)),cmap="rainbow")  # , levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
+        ax11.set_title("Left Singular Vectors (svd.Vh[1])")
 
-    ax12 = plt.subplot(2, 2, 4, projection="polar")
-    print("np.minimum(svd.Vh[2]), np.maximum(svd.Vh[2])", svd.Vh[2].min(), svd.Vh[2].max())
-    ax12.contourf(QPHI, QR, svd.Vh[2].reshape(np.shape(QPHI)), levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
-    ax12.set_title("Left Singular Vectors (svd.Vh[2])")
+        ax12 = plt.subplot(2, 2, 4, projection="polar")
+        print("np.minimum(svd.Vh[2]), np.maximum(svd.Vh[2])", svd.Vh[2].min(), svd.Vh[2].max())
+        ax12.contourf(QPHI, QR, svd.Vh[2].reshape(np.shape(QPHI)),cmap="rainbow" ) #, levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
+        ax12.set_title("Left Singular Vectors (svd.Vh[2])")
 
-    plt.tight_layout()
-    plt.savefig(f"{folder}/svd.png", dpi=300)
-    plt.show()
-    plt.close()
+        plt.tight_layout()
+        plt.savefig(f"{folder}/{Fname[k]}_svd.png", dpi=300)
+        plt.show()
+        plt.close()
 
-    SqV = np.inner(all_IqIq_af_flatten, np.transpose(svd.Vh))
-    plt.figure()
-    fig = plt.figure(figsize=(2 * len(all_feature_name), 8))
-    axs = [fig.add_subplot(2, len(all_feature_name) // 2 + 1, i + 1, projection="3d") for i in range(len(all_feature_name))]
-    for i in range(len(all_feature_name)):
-        scatter = axs[i].scatter(SqV[:, 0], SqV[:, 1], SqV[:, 2], c=all_feature[:, i], cmap="jet_r", s=2)
-        axs[i].set_xlabel("V[0]")
-        axs[i].set_ylabel("V[1]")
-        axs[i].set_zlabel("V[2]")
-        axs[i].set_title(all_feature_tex[i])
-        axs[i].set_box_aspect([1, 1, 1])  # Set the aspect ratio of the plot
-        # Set the same range for each axis
-        max_range = np.array([SqV[:, 0].max() - SqV[:, 0].min(), SqV[:, 1].max() - SqV[:, 1].min(), SqV[:, 2].max() - SqV[:, 2].min()]).max() / 2.0
-        mid_x = (SqV[:, 0].max() + SqV[:, 0].min()) * 0.5
-        mid_y = (SqV[:, 1].max() + SqV[:, 1].min()) * 0.5
-        mid_z = (SqV[:, 2].max() + SqV[:, 2].min()) * 0.5
-        axs[i].set_xlim(mid_x - max_range, mid_x + max_range)
-        axs[i].set_ylim(mid_y - max_range, mid_y + max_range)
-        axs[i].set_zlim(mid_z - max_range, mid_z + max_range)
-        cbar = fig.colorbar(scatter, ax=axs[i], fraction=0.02)
-        cbar.set_label(all_feature_tex[i])
-        axs[i].view_init(elev=10.0, azim=-30)
+        SqV = np.inner(F[k], np.transpose(svd.Vh))
+        plt.figure()
+        fig = plt.figure(figsize=(2 * len(all_feature_name), 8))
+        axs = [fig.add_subplot(2, len(all_feature_name) // 2 + 1, i + 1, projection="3d") for i in range(len(all_feature_name))]
+        for i in range(len(all_feature_name)):
+            scatter = axs[i].scatter(SqV[:, 0], SqV[:, 1], SqV[:, 2], c=all_feature[:, i], cmap="rainbow", s=1)
+            axs[i].set_xlabel("V[0]")
+            axs[i].set_ylabel("V[1]")
+            axs[i].set_zlabel("V[2]")
+            axs[i].set_title(all_feature_tex[i])
+            axs[i].set_box_aspect([1, 1, 1])  # Set the aspect ratio of the plot
+            # Set the same range for each axis
+            max_range = np.array([SqV[:, 0].max() - SqV[:, 0].min(), SqV[:, 1].max() - SqV[:, 1].min(), SqV[:, 2].max() - SqV[:, 2].min()]).max() / 2.0
+            mid_x = (SqV[:, 0].max() + SqV[:, 0].min()) * 0.5
+            mid_y = (SqV[:, 1].max() + SqV[:, 1].min()) * 0.5
+            mid_z = (SqV[:, 2].max() + SqV[:, 2].min()) * 0.5
+            axs[i].set_xlim(mid_x - max_range, mid_x + max_range)
+            axs[i].set_ylim(mid_y - max_range, mid_y + max_range)
+            axs[i].set_zlim(mid_z - max_range, mid_z + max_range)
+            cbar = fig.colorbar(scatter, ax=axs[i], fraction=0.02)
+            cbar.set_label(all_feature_tex[i])
+            axs[i].view_init(elev=10.0, azim=-30)
 
-    plt.tight_layout()
-    plt.savefig(f"{folder}/svd_projection_scatter_plot.png", dpi=300)
-    plt.show()
-    plt.close()
+        plt.tight_layout()
+        plt.savefig(f"{folder}/{Fname[k]}_svd_projection_scatter_plot.png", dpi=300)
+        plt.show()
+        plt.close()
 
-    # save these analyzed data for further easy plotting
-    # svd data
-    # data = np.column_stack((qDx.flatten(), svd.S, svd.Vh[0], svd.Vh[1], svd.Vh[2]))
-    # column_names = ['qD', 'svd.S', 'svd.Vh[0]', 'svd.Vh[1]', 'svd.Vh[2]']
-    # np.savetxt(f"{folder}/data_L{L}_svd.txt", data, delimiter=',', header=','.join(column_names), comments='')
+        # save these analyzed data for further easy plotting
+        # svd data
+        # data = np.column_stack((qDx.flatten(), svd.S, svd.Vh[0], svd.Vh[1], svd.Vh[2]))
+        # column_names = ['qD', 'svd.S', 'svd.Vh[0]', 'svd.Vh[1]', 'svd.Vh[2]']
+        # np.savetxt(f"{folder}/data_L{L}_svd.txt", data, delimiter=',', header=','.join(column_names), comments='')
 
-    #  svd projection data
-    # save svd projection data
-    data = np.column_stack((all_feature, SqV[:, 0], SqV[:, 1], SqV[:, 2]))
-    column_names = all_feature_name + ["sqv[0]", "sqv[1]", "sqv[2]"]
-    np.savetxt(f"{folder}/data_svd_projection.txt", data, delimiter=",", header=",".join(column_names), comments="")
+        #  svd projection data
+        # save svd projection data
+        data = np.column_stack((all_feature, SqV[:, 0], SqV[:, 1], SqV[:, 2]))
+        column_names = all_feature_name + ["sqv[0]", "sqv[1]", "sqv[2]"]
+        np.savetxt(f"{folder}/data_{Fname[k]}_svd_projection.txt", data, delimiter=",", header=",".join(column_names), comments="")
 
 
 def calc_Sq_pair_distance_distribution(all_Delta_Sq, max_z, bin_num):

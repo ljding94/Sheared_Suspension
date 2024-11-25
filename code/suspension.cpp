@@ -1,4 +1,4 @@
-#include "ideal_gas.h"
+#include "suspension.h"
 #include <cmath>
 #include <iostream>
 #include <random>
@@ -6,7 +6,7 @@
 #include <fstream>
 
 // initialization
-ideal_gas::ideal_gas(double R0_, int n_, double sigma_, double sqrtD_, double gxy_, bool random_param)
+suspension::suspension(double R0_, double Rmu_, int n_, double sigma_, double sqrtD_, double gxy_, bool random_param)
 {
 
     // set random number generators
@@ -20,7 +20,7 @@ ideal_gas::ideal_gas(double R0_, int n_, double sigma_, double sqrtD_, double gx
     rand_norm = rand_norm_set;
 
     R0 = R0_;
-
+    Rmu = Rmu_;
     n = n_;
     sigma = sigma_;
     sqrtD = sqrtD_;
@@ -31,22 +31,25 @@ ideal_gas::ideal_gas(double R0_, int n_, double sigma_, double sqrtD_, double gx
     {
         std::cout << "\nrandom_param" << std::endl;
         // gxx*gyy-gxy*gyx=1
-        n = 100 + 100 * rand_uni(gen);
+        Rmu = (0.9+0.2*rand_uni(gen))*R0;
+        //n = 100 + 100 * rand_uni(gen);
+        n = 100;
         sigma = 0.0 + 0.5 * rand_uni(gen);
-        sqrtD = (0.0 + 2 * rand_uni(gen)) * R0;
-        gxy = (-10 + 20 * rand_uni(gen)) * R0;
+        sqrtD = (0.0 + 5 * rand_uni(gen)) * R0;
+        gxy = (50 * rand_uni(gen)) * R0;
     }
     else
     {
+        Rmu = Rmu_;
         n = n_;
         sigma = sigma_;
         sqrtD = sqrtD_;
         gxy = gxy_;
     }
-    std::cout << "n=" << n << ", sigma=" << sigma << ", sqrtD/R0=" << sqrtD / R0 << ", gxy/R0=" << gxy / R0 << std::endl;
+    std::cout<<"Rmu/R0="<<Rmu/R0 << ", n=" << n << ", sigma=" << sigma << ", sqrtD/R0=" << sqrtD / R0 << ", gxy/R0=" << gxy / R0 << std::endl;
 }
 
-int ideal_gas::generate_gas()
+int suspension::generate_gas()
 {
     // for simplicity, let's ignore hard disk interaction and just direct sample random positions
     // generate the gas system
@@ -57,7 +60,7 @@ int ideal_gas::generate_gas()
     double L = 2.0; // box size
     for (int i = 0; i < all_beads.size(); i++)
     {
-        all_beads[i].R = R0 * std::exp(sigma * rand_norm(gen)); // on average radius of the bead PDI=e^{3*sigma^2}: I guess
+        all_beads[i].R = Rmu * std::exp(sigma * rand_norm(gen)); // on average radius of the bead PDI=e^{3*sigma^2}: I guess
         all_beads[i].V = 4.0 / 3.0 * M_PI * all_beads[i].R * all_beads[i].R * all_beads[i].R;
         all_beads[i].r = {(rand_uni(gen) - 0.5) * L, (rand_uni(gen) - 0.5) * L}; // bead position in 2d
         //  let's try circular shape
@@ -68,7 +71,7 @@ int ideal_gas::generate_gas()
     return 1;
 }
 
-observable ideal_gas::measure_observable(int bnum_r, int bnum_phi)
+observable suspension::measure_observable(int bnum_r, int bnum_phi)
 {
     // measure the observable
     observable obs;
@@ -126,8 +129,9 @@ observable ideal_gas::measure_observable(int bnum_r, int bnum_phi)
     return obs;
 }
 
-std::vector<double> ideal_gas::calc_structure_sphere_form_factor(std::vector<double> qr, double R)
+std::vector<double> suspension::calc_structure_sphere_form_factor(std::vector<double> qr, double R)
 {
+    // ref: http://gisaxs.com/index.php/Form_Factor:Sphere
     int bnum_r = qr.size();
     std::vector<double> fq(bnum_r, 0);
     for (int k = 0; k < bnum_r; k++)
@@ -136,7 +140,7 @@ std::vector<double> ideal_gas::calc_structure_sphere_form_factor(std::vector<dou
     }
     return fq;
 }
-std::vector<std::vector<double>> ideal_gas::calc_structure_factor_2d(std::vector<double> qr, std::vector<double> qphi)
+std::vector<std::vector<double>> suspension::calc_structure_factor_2d(std::vector<double> qr, std::vector<double> qphi)
 {
     // measrue 2d structure factor
     int bnum_r = qr.size();
@@ -192,7 +196,7 @@ std::vector<std::vector<double>> ideal_gas::calc_structure_factor_2d(std::vector
     return Iq;
 }
 
-void ideal_gas::affine_transform()
+void suspension::affine_transform()
 {
     // affine transform the gas system
     double x, y;
@@ -205,7 +209,7 @@ void ideal_gas::affine_transform()
     }
 }
 
-void ideal_gas::Brownian_transform()
+void suspension::Brownian_transform()
 {
     // Brownian transform the gas system
     double dx, dy;
@@ -218,7 +222,7 @@ void ideal_gas::Brownian_transform()
     }
 }
 
-std::vector<std::vector<double>> ideal_gas::calc_structure_factor_2d_af(std::vector<double> qr, std::vector<double> qphi)
+std::vector<std::vector<double>> suspension::calc_structure_factor_2d_af(std::vector<double> qr, std::vector<double> qphi)
 {
     // measrue 2d structure factor after affine transformation
     std::vector<std::vector<double>> Sq; // initialize with 1 due to self overlaping term (see S.H. Chen 1986 eq 18)
@@ -230,7 +234,7 @@ std::vector<std::vector<double>> ideal_gas::calc_structure_factor_2d_af(std::vec
     return Sq;
 }
 
-std::vector<std::vector<double>> ideal_gas::element_wise_dot_2d(std::vector<std::vector<double>> M1, std::vector<std::vector<double>> M2)
+std::vector<std::vector<double>> suspension::element_wise_dot_2d(std::vector<std::vector<double>> M1, std::vector<std::vector<double>> M2)
 {
     // calculate the dot product of two 2d structure factors
     int bnum_r = M1.size();
@@ -246,7 +250,7 @@ std::vector<std::vector<double>> ideal_gas::element_wise_dot_2d(std::vector<std:
     return MM;
 }
 
-std::vector<std::vector<double>> ideal_gas::calc_structure_factor_correlation(std::vector<std::vector<double>> Sq1, std::vector<std::vector<double>> Sq2, std::vector<double> qD)
+std::vector<std::vector<double>> suspension::calc_structure_factor_correlation(std::vector<std::vector<double>> Sq1, std::vector<std::vector<double>> Sq2, std::vector<double> qD)
 {
     // TODO: normalize by autocorrelations
 
@@ -297,7 +301,7 @@ std::vector<std::vector<double>> ideal_gas::calc_structure_factor_correlation(st
     return SqSq;
 }
 
-void ideal_gas::save_gas_config_to_file(std::string filename)
+void suspension::save_gas_config_to_file(std::string filename)
 {
     // save the gas system to file
     std::ofstream f(filename);
@@ -319,7 +323,7 @@ void ideal_gas::save_gas_config_to_file(std::string filename)
     }
 }
 
-void ideal_gas::save_observable_to_file(std::string filename, std::vector<observable> obs_ensemble)
+void suspension::save_observable_to_file(std::string filename, std::vector<observable> obs_ensemble)
 {
     // save the observable to file
     std::ofstream f(filename);
@@ -359,9 +363,9 @@ void ideal_gas::save_observable_to_file(std::string filename, std::vector<observ
             }
         }
 
-        f << "label,R0,n,sigma,sqrtD/R0,gxy/R0,qr,Iq2D/Iq2D_af/IqIq_af\n";
+        f << "label,Rmu/R0,n,sigma,sqrtD/R0,gxy/R0,qr,Iq2D/Iq2D_af/IqIq_af\n";
         // write parameters and stats to the file
-        f << "mean," << R0 << "," << n << "," << sigma << "," << sqrtD / R0 << "," << gxy / R0;
+        f << "mean," << Rmu/R0 << "," << n << "," << sigma << "," << sqrtD / R0 << "," << gxy / R0;
         f << ",Na";
         for (int j = 0; j < obs_ensemble[0].qphi.size(); j++)
         {
@@ -407,7 +411,7 @@ void ideal_gas::save_observable_to_file(std::string filename, std::vector<observ
     }
 }
 
-void ideal_gas::run_simulation(int N_config, int bnum_r, int bnum_phi, std::string folder, std::string finfo)
+void suspension::run_simulation(int N_config, int bnum_r, int bnum_phi, std::string folder, std::string finfo)
 {
     // run the simulation
     std::vector<observable> obs_ensemble(N_config);
