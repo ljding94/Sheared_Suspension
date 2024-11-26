@@ -48,7 +48,7 @@ int main(int argc, char const *argv[])
 
         std::string finfo = "n" + std::string(argv[1]) + "_Rmu" + std::string(argv[2]) + "_sigma" + std::string(argv[3]) + "_sqrtD" + std::string(argv[4]) + "_gxy" + std::string(argv[5]);
 
-        int number_of_config = 2000;
+        int number_of_config = 4000;
         int bnum_r = 100;
         int bnum_phi = 101;
 
