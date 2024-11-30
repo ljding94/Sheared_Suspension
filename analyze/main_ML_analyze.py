@@ -10,9 +10,9 @@ import time
 def main():
 
     print("analyzing data using ML model")
-    folder = "../data/20241125_rand"
+    folder = "../data/20241126_rand"
     rand_num = 4000
-    rand_max = 3000
+    rand_max = 4000
     parameters = []
     for i in range(rand_num):
         filename = f"{folder}/obs_random_run{i}.csv"

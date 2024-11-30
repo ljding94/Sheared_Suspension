@@ -31,9 +31,10 @@ suspension::suspension(double R0_, double Rmu_, int n_, double sigma_, double sq
     {
         std::cout << "\nrandom_param" << std::endl;
         // gxx*gyy-gxy*gyx=1
-        Rmu = (0.9+0.2*rand_uni(gen))*R0;
-        //n = 100 + 100 * rand_uni(gen);
-        n = 100;
+        //Rmu = (0.9+0.2*rand_uni(gen))*R0;
+        Rmu = 1.0*R0;
+        n = 100 + 50 * rand_uni(gen);
+        //n = 100;
         sigma = 0.0 + 0.5 * rand_uni(gen);
         sqrtD = (0.0 + 5 * rand_uni(gen)) * R0;
         gxy = (50 * rand_uni(gen)) * R0;
@@ -79,8 +80,8 @@ observable suspension::measure_observable(int bnum_r, int bnum_phi)
     // measure the structure factor
 
     // 1. set up q vectors
-    double qri = 300;
-    double qrf = 3000;
+    double qri = 0.5/R0;
+    double qrf = 5/R0;
     obs.qr.resize(bnum_r);
     std::vector<double> qr(bnum_r, 0);
     for (int k = 0; k < bnum_r; k++)
@@ -442,6 +443,8 @@ void suspension::save_avg_observable_to_file(std::string filename)
             }
         }
 
+        // it's the same as Iq_2D on average
+        /*
         for (int kr = 0; kr < avg_obs.Iq2D_af.size(); kr++)
         {
             f << "\nIq2D_af,NA,NA,NA,NA,NA";
@@ -451,6 +454,7 @@ void suspension::save_avg_observable_to_file(std::string filename)
                 f << "," << avg_obs.Iq2D_af[kr][kphi];
             }
         }
+        */
 
         for (int kr = 0; kr < avg_obs.IqIq_af.size(); kr++)
         {
