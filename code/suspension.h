@@ -72,7 +72,7 @@ public:
     // experiment
     void save_gas_config_to_file(std::string filename);
     void save_observable_to_file(std::string filename, std::vector<observable> obs_ensemble);
-    void save_avg_observable_to_file(std::string filename);
+    void save_avg_observable_to_file(std::string filename, bool save_Iqaf = false);
     void run_simulation(int N_config, int bnum_r, int bnum_phi, std::string folder, std::string finfo);
 };
 

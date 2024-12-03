@@ -31,13 +31,13 @@ suspension::suspension(double R0_, double Rmu_, int n_, double sigma_, double sq
     {
         std::cout << "\nrandom_param" << std::endl;
         // gxx*gyy-gxy*gyx=1
-        //Rmu = (0.9+0.2*rand_uni(gen))*R0;
-        Rmu = 1.0*R0;
-        n = 100 + 50 * rand_uni(gen);
-        //n = 100;
-        sigma = 0.0 + 0.5 * rand_uni(gen);
-        sqrtD = (0.0 + 5 * rand_uni(gen)) * R0;
-        gxy = (50 * rand_uni(gen)) * R0;
+        // Rmu = (0.9+0.2*rand_uni(gen))*R0;
+        Rmu = 1.0 * R0;
+        n = 100 + 100 * rand_uni(gen);
+        // n = 100;
+        sigma = 0.0 + 0.4 * rand_uni(gen);
+        sqrtD = (1 + 4 * rand_uni(gen)) * R0;
+        gxy = (10 + 40 * rand_uni(gen)) * R0;
     }
     else
     {
@@ -47,7 +47,7 @@ suspension::suspension(double R0_, double Rmu_, int n_, double sigma_, double sq
         sqrtD = sqrtD_;
         gxy = gxy_;
     }
-    std::cout<<"Rmu/R0="<<Rmu/R0 << ", n=" << n << ", sigma=" << sigma << ", sqrtD/R0=" << sqrtD / R0 << ", gxy/R0=" << gxy / R0 << std::endl;
+    std::cout << "Rmu/R0=" << Rmu / R0 << ", n=" << n << ", sigma=" << sigma << ", sqrtD/R0=" << sqrtD / R0 << ", gxy/R0=" << gxy / R0 << std::endl;
 }
 
 int suspension::generate_gas()
@@ -80,14 +80,14 @@ observable suspension::measure_observable(int bnum_r, int bnum_phi)
     // measure the structure factor
 
     // 1. set up q vectors
-    double qri = 0.5/R0;
-    double qrf = 5/R0;
+    double qri = 0.5 / R0;
+    double qrf = 5 / R0;
     obs.qr.resize(bnum_r);
     std::vector<double> qr(bnum_r, 0);
     for (int k = 0; k < bnum_r; k++)
     {
         obs.qr[k] = qri * std::pow(qrf / qri, 1.0 * k / (bnum_r - 1)); // uniform in log scale
-        //obs.qr[k] = qri + (qrf - qri) * k / (bnum_r - 1); // uniform in linear scale
+        // obs.qr[k] = qri + (qrf - qri) * k / (bnum_r - 1); // uniform in linear scale
     }
     obs.qphi.resize(bnum_phi);
     for (int k = 0; k < bnum_phi; k++)
@@ -366,7 +366,7 @@ void suspension::save_observable_to_file(std::string filename, std::vector<obser
 
         f << "label,Rmu/R0,n,sigma,sqrtD/R0,gxy/R0,qr,Iq2D/Iq2D_af/IqIq_af\n";
         // write parameters and stats to the file
-        f << "mean," << Rmu/R0 << "," << n << "," << sigma << "," << sqrtD / R0 << "," << gxy / R0;
+        f << "mean," << Rmu / R0 << "," << n << "," << sigma << "," << sqrtD / R0 << "," << gxy / R0;
         f << ",Na";
         for (int j = 0; j < obs_ensemble[0].qphi.size(); j++)
         {
@@ -412,7 +412,7 @@ void suspension::save_observable_to_file(std::string filename, std::vector<obser
     }
 }
 
-void suspension::save_avg_observable_to_file(std::string filename)
+void suspension::save_avg_observable_to_file(std::string filename, bool save_Iqaf)
 {
     // save the observable to file
     std::ofstream f(filename);
@@ -420,7 +420,7 @@ void suspension::save_avg_observable_to_file(std::string filename)
     {
         f << "label,Rmu/R0,n,sigma,sqrtD/R0,gxy/R0,qr,Iq2D/Iq2D_af/IqIq_af\n";
         // write parameters and stats to the file
-        f << "mean," << Rmu/R0 << "," << n << "," << sigma << "," << sqrtD / R0 << "," << gxy / R0;
+        f << "mean," << Rmu / R0 << "," << n << "," << sigma << "," << sqrtD / R0 << "," << gxy / R0;
         f << ",Na";
         for (int j = 0; j < avg_obs.qphi.size(); j++)
         {
@@ -443,19 +443,6 @@ void suspension::save_avg_observable_to_file(std::string filename)
             }
         }
 
-        // it's the same as Iq_2D on average
-        /*
-        for (int kr = 0; kr < avg_obs.Iq2D_af.size(); kr++)
-        {
-            f << "\nIq2D_af,NA,NA,NA,NA,NA";
-            f << "," << avg_obs.qr[kr];
-            for (int kphi = 0; kphi < avg_obs.Iq2D[kr].size(); kphi++)
-            {
-                f << "," << avg_obs.Iq2D_af[kr][kphi];
-            }
-        }
-        */
-
         for (int kr = 0; kr < avg_obs.IqIq_af.size(); kr++)
         {
             f << "\nIqIq_af,NA,NA,NA,NA,NA";
@@ -465,6 +452,21 @@ void suspension::save_avg_observable_to_file(std::string filename)
                 f << "," << avg_obs.IqIq_af[kr][kphi];
             }
         }
+
+        // it's the same as Iq_2D on average
+        if (save_Iqaf)
+        {
+            for (int kr = 0; kr < avg_obs.Iq2D_af.size(); kr++)
+            {
+                f << "\nIq2D_af,NA,NA,NA,NA,NA";
+                f << "," << avg_obs.qr[kr];
+                for (int kphi = 0; kphi < avg_obs.Iq2D[kr].size(); kphi++)
+                {
+                    f << "," << avg_obs.Iq2D_af[kr][kphi];
+                }
+            }
+        }
+
         f.close();
     }
 }
@@ -479,12 +481,12 @@ void suspension::run_simulation(int N_config, int bnum_r, int bnum_phi, std::str
     avg_obs.Iq2D_af.resize(bnum_r, std::vector<double>(bnum_phi, 0.0));
     avg_obs.IqIq_af.resize(bnum_r, std::vector<double>(bnum_phi, 0.0));
 
-    //std::vector<observable> obs_ensemble(N_config);
+    // std::vector<observable> obs_ensemble(N_config);
     observable obs_buff;
     for (int i = 0; i < N_config; i++)
     {
         double percentage = (static_cast<double>(i + 1) / N_config) * 100;
-        //std::cout << "Generating configuration " << i + 1 << " of " << N_config << " (" << percentage << "%)\r" << std::flush;
+        // std::cout << "Generating configuration " << i + 1 << " of " << N_config << " (" << percentage << "%)\r" << std::flush;
         generate_gas();
         obs_buff = measure_observable(bnum_r, bnum_phi);
 
@@ -511,7 +513,5 @@ void suspension::run_simulation(int N_config, int bnum_r, int bnum_phi, std::str
         }
     }
 
-    //save_gas_config_to_file(folder + "/config_" + finfo + ".csv");
-    //save_observable_to_file(folder + "/obs_" + finfo + ".csv", obs_ensemble);
-    save_avg_observable_to_file(folder + "/obs_" + finfo + ".csv");
+    // save_observable_to_file(folder + "/obs_" + finfo + ".csv", obs_ensemble);
 }

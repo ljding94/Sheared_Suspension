@@ -49,11 +49,14 @@ int main(int argc, char const *argv[])
         std::string finfo = "n" + std::string(argv[1]) + "_Rmu" + std::string(argv[2]) + "_sigma" + std::string(argv[3]) + "_sqrtD" + std::string(argv[4]) + "_gxy" + std::string(argv[5]);
 
 
-        int number_of_config = 10000; // 2000 for local test
+        int number_of_config = 20000; // 2000 for local test
         int bnum_r = 100;
         int bnum_phi = 101;
 
         gas_2d.run_simulation(number_of_config, bnum_r, bnum_phi, folder, finfo);
+        //gas_2d.save_gas_config_to_file(folder + "/config_" + finfo + ".csv");
+        //gas_2d.save_avg_observable_to_file(folder + "/obs_" + finfo + ".csv", true);
+        gas_2d.save_avg_observable_to_file(folder + "/obs_" + finfo + ".csv");
     }
 
     // random run
@@ -67,10 +70,11 @@ int main(int argc, char const *argv[])
         suspension gas_2d(R0, 1.0*R0, 100, 0.0, 1.0, 0.0, true);
         std::string finfo = "random_run" + std::to_string(run_num);
 
-        int number_of_config = 10000; // 2000 for local test
+        int number_of_config = 20000; // 2000 for local test
         int bnum_r = 100;
         int bnum_phi = 101;
         gas_2d.run_simulation(number_of_config, bnum_r, bnum_phi, folder, finfo);
+        gas_2d.save_avg_observable_to_file(folder + "/obs_" + finfo + ".csv");
     }
 
     std::clock_t c_end = std::clock();

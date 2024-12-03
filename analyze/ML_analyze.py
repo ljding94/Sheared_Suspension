@@ -38,7 +38,7 @@ def get_feature_Iq_gq_data(folder, parameters, random=True):
         data = np.genfromtxt(filename, delimiter=",", skip_header=1)
         bnum_phi = len(data[0]) - 7
         print(f"bnum_phi: {bnum_phi}")
-        bnum_r = int((len(data) - 2) / 3)
+        bnum_r = int((len(data) - 2) / 2)
         print(f"bnum_r: {bnum_r}")
 
         Rmu, n, sigma, sqrtD, gxy = data[0, 1], data[0, 2], data[0, 3], data[0, 4], data[0, 5]
@@ -46,16 +46,17 @@ def get_feature_Iq_gq_data(folder, parameters, random=True):
         qphi = data[1, 7:]
         qr = data[2 : 2 + bnum_r, 6]
         Iq2D = data[2 : 2 + bnum_r, 7:]
-        Iq2D_af = data[2 + bnum_r : 2 + 2 * bnum_r, 7:]
-        IqIq_af = data[2 + 2 * bnum_r : 2 + 3 * bnum_r, 7:]
+        #Iq2D_af = data[2 + bnum_r : 2 + 2 * bnum_r, 7:]
+        IqIq_af = data[2 + bnum_r : 2 + 2 * bnum_r, 7:]
 
         gq = IqIq_af / (Iq2D * Iq2D)
         QPHI, QR = np.meshgrid(qphi, qr)
-        gq_phi = np.mean(gq*QR, axis=0)/np.mean(QR, axis=0)
+        #gq_phi = np.mean(gq*QR, axis=0)/np.mean(QR, axis=0)
+        gq_phi = np.mean(gq, axis=0)
         gq_r = np.mean(gq, axis=1)
 
 
-        all_Iq2D.append(Iq2D)
+        #all_Iq2D.append(Iq2D)
         all_IqIq_af.append(IqIq_af)
         all_gq.append(gq)
         all_gq_phi.append(gq_phi)
@@ -267,9 +268,9 @@ def GaussianProcess_optimization(folder, parameters_train):
     grid_size = 30
 
     theta_per_feature = {
-        "sigma": (np.logspace(-1, 0, grid_size), np.logspace(-3, -1, grid_size)),
-        "sqrtD": (np.logspace(-1, 0, grid_size), np.logspace(-3, -2, grid_size)),
-        "gxy": (np.logspace(-1, 1, grid_size), np.logspace(-4, -2, grid_size)),
+        "sigma": (np.logspace(-2, 0, grid_size), np.logspace(-3, -1, grid_size)),
+        "sqrtD": (np.logspace(-2, 0, grid_size), np.logspace(-3, -1, grid_size)),
+        "gxy": (np.logspace(-2, 1, grid_size), np.logspace(-3, 0, grid_size)),
     }
 
     # feature normalization
