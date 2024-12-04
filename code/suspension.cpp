@@ -36,8 +36,8 @@ suspension::suspension(double R0_, double Rmu_, int n_, double sigma_, double sq
         n = 100 + 100 * rand_uni(gen);
         // n = 100;
         sigma = 0.0 + 0.4 * rand_uni(gen);
-        sqrtD = (1 + 4 * rand_uni(gen)) * R0;
-        gxy = (10 + 40 * rand_uni(gen)) * R0;
+        sqrtD = (0 + 3 * rand_uni(gen)) * R0;
+        gxy = (0 + 10 * rand_uni(gen)) * R0;
     }
     else
     {

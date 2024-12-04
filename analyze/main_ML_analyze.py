@@ -10,9 +10,10 @@ import time
 def main():
 
     print("analyzing data using ML model")
-    folder = "../data/20241201_rand"
-    rand_num = 4000
-    rand_max = 3000
+    folder = "../data/20241202_rand"
+    #folder = "../data/20241125_rand"
+    rand_num = 5000
+    rand_max = 2000
     parameters = []
     for i in range(rand_num):
         filename = f"{folder}/obs_random_run{i}.csv"
@@ -23,7 +24,7 @@ def main():
     print("parameters", parameters)
     print("total number of parameters", len(parameters))
 
-    #calc_svd(folder, parameters)
+    calc_svd(folder, parameters)
 
     #return 0
     random.shuffle(parameters)

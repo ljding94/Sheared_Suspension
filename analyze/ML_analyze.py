@@ -37,17 +37,20 @@ def get_feature_Iq_gq_data(folder, parameters, random=True):
 
         data = np.genfromtxt(filename, delimiter=",", skip_header=1)
         bnum_phi = len(data[0]) - 7
-        print(f"bnum_phi: {bnum_phi}")
+
         bnum_r = int((len(data) - 2) / 2)
-        print(f"bnum_r: {bnum_r}")
+        #bnum_r = int((len(data) - 2) / 3)
+
 
         Rmu, n, sigma, sqrtD, gxy = data[0, 1], data[0, 2], data[0, 3], data[0, 4], data[0, 5]
 
         qphi = data[1, 7:]
-        qr = data[2 : 2 + bnum_r, 6]
+        R0 = 0.00125
+        qr = R0*data[2 : 2 + bnum_r, 6]
         Iq2D = data[2 : 2 + bnum_r, 7:]
         #Iq2D_af = data[2 + bnum_r : 2 + 2 * bnum_r, 7:]
         IqIq_af = data[2 + bnum_r : 2 + 2 * bnum_r, 7:]
+        #IqIq_af = data[2 +2* bnum_r : 2 + 3 * bnum_r, 7:]
 
         gq = IqIq_af / (Iq2D * Iq2D)
         QPHI, QR = np.meshgrid(qphi, qr)
@@ -55,8 +58,11 @@ def get_feature_Iq_gq_data(folder, parameters, random=True):
         gq_phi = np.mean(gq, axis=0)
         gq_r = np.mean(gq, axis=1)
 
+        Iq2D = np.concatenate((Iq2D, Iq2D[:, 1:]), axis=1)
+        IqIq_af = np.concatenate((IqIq_af, IqIq_af[:, 1:]), axis=1)
+        gq = np.concatenate((gq, gq[:, 1:]), axis=1)
 
-        #all_Iq2D.append(Iq2D)
+        all_Iq2D.append(Iq2D)
         all_IqIq_af.append(IqIq_af)
         all_gq.append(gq)
         all_gq_phi.append(gq_phi)
@@ -67,10 +73,11 @@ def get_feature_Iq_gq_data(folder, parameters, random=True):
         all_sigma.append(sigma)
         all_sqrtD.append(sqrtD)
         all_gxy.append(gxy)
-
+    print(f"bnum_phi: {bnum_phi}")
+    print(f"bnum_r: {bnum_r}")
     all_feature = np.array([all_Rmu, all_n, all_sigma, all_sqrtD, all_gxy]).T
     all_feature_name = ["Rmu", "n", "sigma", "sqrtD", "gxy"]
-    all_feature_tex = [r"$R_\mu/R_0$", r"$n$", r"$R_\sigma$", r"$\sqrt{D}/R_0$", r"$\gamma_{xy}/R_0$"]
+    all_feature_tex = [r"$R_\mu/R_0$", r"$nL^2$", r"$R_\sigma$", r"$\sqrt{D}$", r"$\gamma_{xy}L$"]
 
     qphi = np.array(qphi)
     qr = np.array(qr)
@@ -85,8 +92,25 @@ def get_feature_Iq_gq_data(folder, parameters, random=True):
 def calc_svd(folder, parameters):
     all_feature, all_feature_name, all_feature_tex, all_Iq2D, all_gq, all_gq_r, all_gq_phi, qr, qphi = get_feature_Iq_gq_data(folder, parameters, random=True)
 
+    # Plot one Iq
+    '''
+    plt.subplot(projection="polar")
+    qphi_p = np.concatenate((qphi, qphi[1:] + np.pi))
+    QPHI, QR = np.meshgrid(qphi_p, qr)
+    plt.pcolormesh(QPHI, QR, all_Iq2D[0], cmap="rainbow")
+    plt.xlabel("qr")
+    plt.ylabel("Iq")
+    plt.title("Plot of Iq")
+    plt.legend()
+    plt.savefig(f"{folder}/Iq_0_plot.png", dpi=300)
+    plt.show()
+    plt.close()
+    '''
+
     #F = [np.concatenate((all_gq_r[i], all_gq_phi[i])) for i in range(len(all_gq_r))]
     F = all_gq_phi
+    F = all_gq_r
+    qphi = qr
 
     print("all_feature shape:", np.array(all_feature).shape)
     svd = np.linalg.svd(F)
@@ -131,7 +155,7 @@ def calc_svd(folder, parameters):
     fig = plt.figure(figsize=(2 * len(all_feature_name), 8))
     axs = [fig.add_subplot(2, len(all_feature_name) // 2 + 1, i + 1, projection="3d") for i in range(len(all_feature_name))]
     for i in range(len(all_feature_name)):
-        scatter = axs[i].scatter(SqV[:, 0], SqV[:, 1], SqV[:, 2], c=all_feature[:, i], cmap="rainbow", s=1)
+        scatter = axs[i].scatter(SqV[:, 0], SqV[:, 1], SqV[:, 2], c=all_feature[:, i], cmap="rainbow", s=0.5)
         axs[i].set_xlabel("V[0]")
         axs[i].set_ylabel("V[1]")
         axs[i].set_zlabel("V[2]")
@@ -154,6 +178,7 @@ def calc_svd(folder, parameters):
     plt.show()
     plt.close()
 
+    '''
      # svd data
     data = np.column_stack((qphi, svd.S, svd.Vh[0], svd.Vh[1], svd.Vh[2]))
     column_names = ['q', 'svd.S', 'svd.Vh[0]', 'svd.Vh[1]', 'svd.Vh[2]']
@@ -162,6 +187,7 @@ def calc_svd(folder, parameters):
     data = np.column_stack((all_feature, SqV[:, 0], SqV[:, 1], SqV[:, 2]))
     column_names = all_feature_name + ["sqv[0]", "sqv[1]", "sqv[2]"]
     np.savetxt(f"{folder}/data_svd_projection.txt", data, delimiter=",", header=",".join(column_names), comments="")
+    '''
 
 
 def calc_Sq_pair_distance_distribution(all_Delta_Sq, max_z, bin_num):
@@ -268,9 +294,10 @@ def GaussianProcess_optimization(folder, parameters_train):
     grid_size = 30
 
     theta_per_feature = {
+        "n": (np.logspace(-2, 0, grid_size), np.logspace(-3, -1, grid_size)),
         "sigma": (np.logspace(-2, 0, grid_size), np.logspace(-3, -1, grid_size)),
         "sqrtD": (np.logspace(-2, 0, grid_size), np.logspace(-3, -1, grid_size)),
-        "gxy": (np.logspace(-2, 1, grid_size), np.logspace(-3, 0, grid_size)),
+        "gxy": (np.logspace(-2, 0, grid_size), np.logspace(-1, 0, grid_size)),
     }
 
     # feature normalization
@@ -287,6 +314,7 @@ def GaussianProcess_optimization(folder, parameters_train):
         feature_index = all_feature_name.index(feature_name)
 
         F_learn = all_gq_phi
+        F_learn = all_gq_r
 
         # witout theta optimization
         kernel = RBF(1) + WhiteKernel(1)
@@ -309,7 +337,7 @@ def GaussianProcess_optimization(folder, parameters_train):
                 print(f"Calculating LML: i={i}/{Theta0.shape[0]}, j={j}/{Theta0.shape[1]}, LML={LML[i][j]}", end="\r")
         # reason for np.log here is the theta is log-transformed hyperparameters (https://github.com/scikit-learn/scikit-learn/blob/5491dc695/sklearn/gaussian_process/kernels.py#L1531) line (289)
 
-        ax.contour(Theta0, Theta1, LML, levels=200)
+        ax.contour(Theta0, Theta1, LML, levels=1000)
         # find optimized theta0, theta1, using the above contour as guidanve
         kernel = RBF(theta0[grid_size // 2], (theta0[0], theta0[-1])) + WhiteKernel(theta1[grid_size // 2], (theta1[0], theta1[-1]))
         gp = GaussianProcessRegressor(kernel=kernel, alpha=0.0, n_restarts_optimizer=10).fit(F_learn, all_feature[:, feature_index])
@@ -369,6 +397,7 @@ def GaussianProcess_prediction(folder, parameters_test, all_feature_mean, all_fe
 
     plt.figure()
     Fstar = all_gq_phi
+    Fstar = all_gq_r
     fig, axs = plt.subplots(1, len(all_feature_name), figsize=(6 * len(all_feature_name), 6))
     for feature_name, gp in all_gp_per_feature.items():
         feature_index = all_feature_name.index(feature_name)
