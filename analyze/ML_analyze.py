@@ -109,8 +109,8 @@ def calc_svd(folder, parameters):
 
     #F = [np.concatenate((all_gq_r[i], all_gq_phi[i])) for i in range(len(all_gq_r))]
     F = all_gq_phi
-    F = all_gq_r
-    qphi = qr
+    #F = all_gq_r
+    #qphi = qr
 
     print("all_feature shape:", np.array(all_feature).shape)
     svd = np.linalg.svd(F)

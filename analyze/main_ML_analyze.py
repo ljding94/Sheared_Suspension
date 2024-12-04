@@ -10,7 +10,7 @@ import time
 def main():
 
     print("analyzing data using ML model")
-    folder = "../data/20241202_rand"
+    folder = "../data/20241202_andes_rand"
     #folder = "../data/20241125_rand"
     rand_num = 5000
     rand_max = 2000
@@ -24,7 +24,7 @@ def main():
     print("parameters", parameters)
     print("total number of parameters", len(parameters))
 
-    calc_svd(folder, parameters)
+    #calc_svd(folder, parameters)
 
     #return 0
     random.shuffle(parameters)
