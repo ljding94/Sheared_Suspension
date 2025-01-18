@@ -486,7 +486,7 @@ void suspension::run_simulation(int N_config, int bnum_r, int bnum_phi, std::str
     for (int i = 0; i < N_config; i++)
     {
         double percentage = (static_cast<double>(i + 1) / N_config) * 100;
-        // std::cout << "Generating configuration " << i + 1 << " of " << N_config << " (" << percentage << "%)\r" << std::flush;
+        std::cout << "Generating configuration " << i + 1 << " of " << N_config << " (" << percentage << "%)\r" << std::flush;
         generate_gas();
         obs_buff = measure_observable(bnum_r, bnum_phi);
 

@@ -39,22 +39,24 @@ def get_feature_Iq_gq_data(folder, parameters, random=True):
         bnum_phi = len(data[0]) - 7
 
         bnum_r = int((len(data) - 2) / 2)
-        #bnum_r = int((len(data) - 2) / 3)
-
+        # bnum_r = int((len(data) - 2) / 3)
 
         Rmu, n, sigma, sqrtD, gxy = data[0, 1], data[0, 2], data[0, 3], data[0, 4], data[0, 5]
 
+        if sqrtD > 3 or gxy > 30 or sqrtD < 0.5 or gxy < 5:
+            continue
+
         qphi = data[1, 7:]
         R0 = 0.00125
-        qr = R0*data[2 : 2 + bnum_r, 6]
+        qr = R0 * data[2 : 2 + bnum_r, 6]
         Iq2D = data[2 : 2 + bnum_r, 7:]
-        #Iq2D_af = data[2 + bnum_r : 2 + 2 * bnum_r, 7:]
+        # Iq2D_af = data[2 + bnum_r : 2 + 2 * bnum_r, 7:]
         IqIq_af = data[2 + bnum_r : 2 + 2 * bnum_r, 7:]
-        #IqIq_af = data[2 +2* bnum_r : 2 + 3 * bnum_r, 7:]
+        # IqIq_af = data[2 +2* bnum_r : 2 + 3 * bnum_r, 7:]
 
         gq = IqIq_af / (Iq2D * Iq2D)
         QPHI, QR = np.meshgrid(qphi, qr)
-        #gq_phi = np.mean(gq*QR, axis=0)/np.mean(QR, axis=0)
+        # gq_phi = np.mean(gq*QR, axis=0)/np.mean(QR, axis=0)
         gq_phi = np.mean(gq, axis=0)
         gq_r = np.mean(gq, axis=1)
 
@@ -89,11 +91,12 @@ def get_feature_Iq_gq_data(folder, parameters, random=True):
 
     return all_feature, all_feature_name, all_feature_tex, all_Iq2D, all_gq, all_gq_r, all_gq_phi, qr, qphi
 
+
 def calc_svd(folder, parameters):
     all_feature, all_feature_name, all_feature_tex, all_Iq2D, all_gq, all_gq_r, all_gq_phi, qr, qphi = get_feature_Iq_gq_data(folder, parameters, random=True)
 
     # Plot one Iq
-    '''
+    """
     plt.subplot(projection="polar")
     qphi_p = np.concatenate((qphi, qphi[1:] + np.pi))
     QPHI, QR = np.meshgrid(qphi_p, qr)
@@ -105,12 +108,12 @@ def calc_svd(folder, parameters):
     plt.savefig(f"{folder}/Iq_0_plot.png", dpi=300)
     plt.show()
     plt.close()
-    '''
+    """
 
-    #F = [np.concatenate((all_gq_r[i], all_gq_phi[i])) for i in range(len(all_gq_r))]
+    # F = [np.concatenate((all_gq_r[i], all_gq_phi[i])) for i in range(len(all_gq_r))]
     F = all_gq_phi
-    #F = all_gq_r
-    #qphi = qr
+    # F = all_gq_r
+    # qphi = qr
 
     print("all_feature shape:", np.array(all_feature).shape)
     svd = np.linalg.svd(F)
@@ -118,7 +121,7 @@ def calc_svd(folder, parameters):
     print("np.array(svd.U).shape", np.array(svd.U).shape)
     print("np.array(svd.S).shape", np.array(svd.S).shape)
     print("np.array(svd.Vh).shape", np.array(svd.Vh).shape)
-    # print(np.linalg.svd(all_Delta_Sq))
+    # print(np.linalg.svd(X))
     plt.figure(figsize=(6, 6))
     # Subplot for svd.S
     ax00 = plt.subplot(2, 2, 1)
@@ -128,20 +131,20 @@ def calc_svd(folder, parameters):
     # Subplot for svd.U
     ax01 = plt.subplot(2, 2, 2)
     print("np.minimum(svd.Vh[0]), np.maximum(svd.Vh[0])", svd.Vh[0].min(), svd.Vh[0].max())
-    #ax01.contourf(QPHI, QR, svd.Vh[0].reshape(np.shape(QPHI)), cmap="rainbow")  # , levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
+    # ax01.contourf(QPHI, QR, svd.Vh[0].reshape(np.shape(QPHI)), cmap="rainbow")  # , levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
     ax01.plot(qphi, svd.Vh[0])
     ax01.set_title("Left Singular Vectors (svd.Vh[0])")
 
     ax11 = plt.subplot(2, 2, 3)
     print("np.minimum(svd.Vh[1]), np.maximum(svd.Vh[1])", svd.Vh[1].min(), svd.Vh[1].max())
-    #ax11.contourf(QPHI, QR, svd.Vh[1].reshape(np.shape(QPHI)),cmap="rainbow")  # , levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
+    # ax11.contourf(QPHI, QR, svd.Vh[1].reshape(np.shape(QPHI)),cmap="rainbow")  # , levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
     ax11.plot(qphi, svd.Vh[1])
     ax11.set_title("Left Singular Vectors (svd.Vh[1])")
 
     ax12 = plt.subplot(2, 2, 4)
     print("np.minimum(svd.Vh[2]), np.maximum(svd.Vh[2])", svd.Vh[2].min(), svd.Vh[2].max())
     ax12.plot()
-    #ax12.contourf(QPHI, QR, svd.Vh[2].reshape(np.shape(QPHI)),cmap="rainbow") #, levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
+    # ax12.contourf(QPHI, QR, svd.Vh[2].reshape(np.shape(QPHI)),cmap="rainbow") #, levels=np.linspace(-0.3, 0.2, 10), cmap="rainbow")
     ax12.plot(qphi, svd.Vh[2])
     ax12.set_title("Left Singular Vectors (svd.Vh[2])")
 
@@ -150,7 +153,7 @@ def calc_svd(folder, parameters):
     plt.show()
     plt.close()
 
-    SqV = np.inner(F, np.transpose(svd.Vh))
+    SqV = np.dot(F, np.transpose(svd.Vh))
     plt.figure()
     fig = plt.figure(figsize=(2 * len(all_feature_name), 8))
     axs = [fig.add_subplot(2, len(all_feature_name) // 2 + 1, i + 1, projection="3d") for i in range(len(all_feature_name))]
@@ -178,7 +181,7 @@ def calc_svd(folder, parameters):
     plt.show()
     plt.close()
 
-    '''
+
      # svd data
     data = np.column_stack((qphi, svd.S, svd.Vh[0], svd.Vh[1], svd.Vh[2]))
     column_names = ['q', 'svd.S', 'svd.Vh[0]', 'svd.Vh[1]', 'svd.Vh[2]']
@@ -187,32 +190,30 @@ def calc_svd(folder, parameters):
     data = np.column_stack((all_feature, SqV[:, 0], SqV[:, 1], SqV[:, 2]))
     column_names = all_feature_name + ["sqv[0]", "sqv[1]", "sqv[2]"]
     np.savetxt(f"{folder}/data_svd_projection.txt", data, delimiter=",", header=",".join(column_names), comments="")
-    '''
 
 
-def calc_Sq_pair_distance_distribution(all_Delta_Sq, max_z, bin_num):
+
+def calc_Sq_pair_distance_distribution(X, max_z, bin_num):
     all_z = np.linspace(0, max_z, bin_num)
-    all_Delta_Sq_dis = np.zeros(bin_num)
-    all_Delta_Sq_dis[0] = 1 / len(all_Delta_Sq)  # for self distance
-
-    for i in range(len(all_Delta_Sq) - 1):
-        for j in range(i + 1, len(all_Delta_Sq)):
-            Delta_Sq_dis = np.sqrt(np.sum(np.square(all_Delta_Sq[i] - all_Delta_Sq[j])))
-            bin_index = int(Delta_Sq_dis / (max_z / bin_num))
+    X_dis = np.zeros(bin_num)
+    for i in range(len(X) - 1):
+        for j in range(i + 1, len(X)):
+            dis = np.sqrt(np.sum(np.square(X[i] - X[j])))
+            bin_index = int(dis / (max_z / bin_num))
             if bin_index >= bin_num:
                 raise ValueError(f"bin_index >= bin_num, z={bin_index/bin_num*max_z}")
-            all_Delta_Sq_dis[bin_index] += 2.0 / (len(all_Delta_Sq)) ** 2 / (max_z / bin_num)  # 2.0 for i,j and j,i symmetry, normalize to 1
+            X_dis[bin_index] += 2.0 / (len(X)) ** 2 / (max_z / bin_num)  # 2.0 for i,j and j,i symmetry, normalize to 1
+    X_dis[0] = 1 / len(X)  # for self distance
+    return X_dis, all_z
 
-    return all_Delta_Sq_dis, all_z
 
-
-def calc_Sq_autocorrelation(mu, all_Delta_Sq, max_z, bin_num):
-    # measure the autocorrelation of mu(Delta_Sq)
+def calc_X_autocorrelation(mu, X, max_z, bin_num):
+    # measure the autocorrelation of mu(X)
     all_z = np.linspace(0, max_z, bin_num)
     avg_mu = np.mean(mu)
     avg_mu2 = np.mean(np.square(mu))
     print("np.shape(mu)", np.shape(mu))
-    print("np.shape(all_Delta_Sq)", np.shape(all_Delta_Sq))
+    print("np.shape(X)", np.shape(X))
 
     print("avg_mu:", avg_mu)
     print("avg_mu2:", avg_mu2)
@@ -223,13 +224,13 @@ def calc_Sq_autocorrelation(mu, all_Delta_Sq, max_z, bin_num):
     avg_muz = np.zeros(bin_num)
 
     # avg_mumuz[0] = avg_mu2  # for self distance
-    # for i in range(len(all_Delta_Sq)-1):
-    #    for j in range(i+1, len(all_Delta_Sq)):
+    # for i in range(len(X)-1):
+    #    for j in range(i+1, len(X)):
     bin_count = np.zeros(bin_num)
     for i in range(len(mu)):
         for j in range(len(mu)):
-            Delta_Sq_dis = np.sqrt(np.sum(np.square(all_Delta_Sq[i] - all_Delta_Sq[j])))
-            bin_index = int(Delta_Sq_dis / (max_z / bin_num))
+            dis = np.sqrt(np.sum(np.square(X[i] - X[j])))
+            bin_index = int(dis / (max_z / bin_num))
             if bin_index >= bin_num:
                 raise ValueError(f"bin_index >= bin_num, z={bin_index/bin_num*max_z}")
             avg_muz[bin_index] += mu[i]
@@ -258,19 +259,21 @@ def calc_Sq_autocorrelation(mu, all_Delta_Sq, max_z, bin_num):
     return ac_mu, all_z
 
 
-def plot_pddf_acf(folder, parameters, max_z=2, n_bin=100):
+def plot_pddf_acf(folder, parameters, max_z=2, n_bin=40):
 
-    all_feature, all_feature_name, all_SqSq2D_flatten, qD = get_all_feature_Iq_gq_data(folder, parameters)
+    all_feature, all_feature_name, all_feature_tex, all_Iq2D, all_gq, all_gq_r, all_gq_phi, qr, qphi = get_feature_Iq_gq_data(folder, parameters, random=True)
 
-    p_z, z = calc_Sq_pair_distance_distribution(all_SqSq2D_flatten, max_z, n_bin)
+    p_z, z = calc_Sq_pair_distance_distribution(all_gq_phi, max_z, n_bin)
 
     plt.figure(figsize=(8, 6))
+    print("np.max(p_z)", np.max(p_z))
     plt.plot(z, p_z / np.max(p_z), label="p_z/max(p_z)")
+    plt.plot(z, p_z, label="p_z")
 
     acf_data = []
     for i in range(len(all_feature_name)):
         # pass
-        acf_mu, z = calc_Sq_autocorrelation(all_feature[:, i], all_SqSq2D_flatten, max_z, n_bin)
+        acf_mu, z = calc_X_autocorrelation(all_feature[:, i], all_gq_phi, max_z, n_bin)
         plt.plot(z, acf_mu, label=f"acf_{all_feature_name[i]}")
         acf_data.append(acf_mu)
 
@@ -279,6 +282,7 @@ def plot_pddf_acf(folder, parameters, max_z=2, n_bin=100):
     plt.title("Pair Distance Distribution and Autocorrelation")
     plt.legend()
     plt.savefig(f"{folder}/pddf_acf.png", dpi=300)
+    plt.show()
     plt.close()
 
     # save these data to file for futher easy plotting
@@ -294,10 +298,10 @@ def GaussianProcess_optimization(folder, parameters_train):
     grid_size = 30
 
     theta_per_feature = {
-        "n": (np.logspace(-2, 0, grid_size), np.logspace(-3, -1, grid_size)),
-        "sigma": (np.logspace(-2, 0, grid_size), np.logspace(-3, -1, grid_size)),
-        "sqrtD": (np.logspace(-2, 0, grid_size), np.logspace(-3, -1, grid_size)),
-        "gxy": (np.logspace(-2, 0, grid_size), np.logspace(-1, 0, grid_size)),
+        #"n": (np.logspace(-2, 0, grid_size), np.logspace(-3, -1, grid_size)),
+        "sigma": (np.logspace(-2, 0, grid_size), np.logspace(-3, -2, grid_size)),
+        "sqrtD": (np.logspace(-1, 0, grid_size), np.logspace(-3, -2, grid_size)),
+        "gxy": (np.logspace(-1, 0, grid_size), np.logspace(-2, -1, grid_size)),
     }
 
     # feature normalization
@@ -417,7 +421,8 @@ def GaussianProcess_prediction(folder, parameters_test, all_feature_mean, all_fe
         Y_predict = Y_predict * all_feature_std[feature_index] + all_feature_mean[feature_index]
         Y_predict_err = Y_predict_err * all_feature_std[feature_index]
 
-        axs[feature_index].errorbar(Y, Y_predict, yerr=Y_predict_err, marker="o", markerfacecolor="none", markersize=3, linestyle="none")
+        #axs[feature_index].errorbar(Y, Y_predict, yerr=Y_predict_err, marker="o", markerfacecolor="none", markersize=3, linestyle="none")
+        axs[feature_index].plot(Y, Y_predict, marker="o", markerfacecolor="none", markersize=3, linestyle="none")
         axs[feature_index].plot(Y, Y, "--")
         min_val = min(np.min(Y), np.min(Y_predict - Y_predict_err))
         max_val = max(np.max(Y), np.max(Y_predict + Y_predict_err))

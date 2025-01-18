@@ -49,14 +49,14 @@ int main(int argc, char const *argv[])
         std::string finfo = "n" + std::string(argv[1]) + "_Rmu" + std::string(argv[2]) + "_sigma" + std::string(argv[3]) + "_sqrtD" + std::string(argv[4]) + "_gxy" + std::string(argv[5]);
 
 
-        int number_of_config = 20000; // 2000 for local test
+        int number_of_config = 1; // 2000 for local test
         int bnum_r = 100;
         int bnum_phi = 101;
 
         gas_2d.run_simulation(number_of_config, bnum_r, bnum_phi, folder, finfo);
-        //gas_2d.save_gas_config_to_file(folder + "/config_" + finfo + ".csv");
-        //gas_2d.save_avg_observable_to_file(folder + "/obs_" + finfo + ".csv", true);
-        gas_2d.save_avg_observable_to_file(folder + "/obs_" + finfo + ".csv");
+        gas_2d.save_gas_config_to_file(folder + "/config_" + finfo + ".csv");
+        gas_2d.save_avg_observable_to_file(folder + "/obs_" + finfo + ".csv", true);
+        //gas_2d.save_avg_observable_to_file(folder + "/obs_" + finfo + ".csv");
     }
 
     // random run
