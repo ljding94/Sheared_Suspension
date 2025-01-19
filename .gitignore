@@ -6,7 +6,10 @@ code/nohup.out
 !analyze/
 analyze/__pycache__
 analyze/.DS_Store
-!plot/*.py
+!plot
+plot/__pycache__
+plot/.DS_Store
+plot/figures/*
 !README.md
 !.gitignore
 
